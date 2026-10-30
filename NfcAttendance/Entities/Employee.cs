@@ -13,6 +13,7 @@ namespace NfcAttendance.Api.Entities
         public string? Department { get; set; }
         public string? Position { get; set; }
         public string? AvatarUrl { get; set; }
+        public string? QrCode { get; set; }
         public string Status { get; set; } = "ACTIVE"; // ACTIVE, INACTIVE
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 

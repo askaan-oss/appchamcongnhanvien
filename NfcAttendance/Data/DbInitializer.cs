@@ -47,6 +47,7 @@ namespace NfcAttendance.Api.Data
                     FullName = "Nguyễn Văn A",
                     Department = "Phòng Kỹ thuật",
                     Position = "Kỹ sư phần mềm",
+                    QrCode = "QR_NV001_A1B2C3D4",
                     Status = "ACTIVE",
                     CreatedAt = DateTime.Now
                 };

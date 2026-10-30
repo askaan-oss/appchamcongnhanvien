@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using NfcAttendance.Api.Data;
@@ -32,7 +33,8 @@ namespace NfcAttendance.Api.Services
                 query = query.Where(e => e.EmployeeCode.ToLower().Contains(search) ||
                                          e.FullName.ToLower().Contains(search) ||
                                          (e.Email != null && e.Email.ToLower().Contains(search)) ||
-                                         (e.Phone != null && e.Phone.Contains(search)));
+                                         (e.Phone != null && e.Phone.Contains(search)) ||
+                                         (e.QrCode != null && e.QrCode.ToLower().Contains(search)));
             }
 
             var totalCount = await query.CountAsync();
@@ -53,6 +55,7 @@ namespace NfcAttendance.Api.Services
                     Department = e.Department,
                     Position = e.Position,
                     AvatarUrl = e.AvatarUrl,
+                    QrCode = e.QrCode,
                     Status = e.Status,
                     CreatedAt = e.CreatedAt,
                     NfcCardUids = e.NfcCards.Where(c => c.Status == "ACTIVE").Select(c => c.Uid).ToList()
@@ -86,6 +89,7 @@ namespace NfcAttendance.Api.Services
                 Department = e.Department,
                 Position = e.Position,
                 AvatarUrl = e.AvatarUrl,
+                QrCode = e.QrCode,
                 Status = e.Status,
                 CreatedAt = e.CreatedAt,
                 NfcCardUids = e.NfcCards.Where(c => c.Status == "ACTIVE").Select(c => c.Uid).ToList()
@@ -105,6 +109,17 @@ namespace NfcAttendance.Api.Services
                 return (false, $"Mã nhân viên '{dto.EmployeeCode}' đã tồn tại trong hệ thống!", null);
             }
 
+            // Nếu người dùng không nhập mã QR, tự sinh mã QR an toàn
+            var qrCode = !string.IsNullOrWhiteSpace(dto.QrCode)
+                ? dto.QrCode.Trim()
+                : GenerateSecureQrCode(dto.EmployeeCode.Trim());
+
+            // Kiểm tra trùng QrCode nếu có nhập
+            if (await _context.Employees.AnyAsync(e => e.QrCode == qrCode))
+            {
+                return (false, $"Mã QR '{qrCode}' đã được gán cho nhân viên khác!", null);
+            }
+
             var employee = new Employee
             {
                 EmployeeCode = dto.EmployeeCode.Trim(),
@@ -114,6 +129,7 @@ namespace NfcAttendance.Api.Services
                 Department = dto.Department?.Trim(),
                 Position = dto.Position?.Trim(),
                 AvatarUrl = dto.AvatarUrl,
+                QrCode = qrCode,
                 Status = "ACTIVE",
                 CreatedAt = DateTime.Now
             };
@@ -131,6 +147,7 @@ namespace NfcAttendance.Api.Services
                 Department = employee.Department,
                 Position = employee.Position,
                 AvatarUrl = employee.AvatarUrl,
+                QrCode = employee.QrCode,
                 Status = employee.Status,
                 CreatedAt = employee.CreatedAt
             });
@@ -142,6 +159,16 @@ namespace NfcAttendance.Api.Services
             if (employee == null)
             {
                 return (false, "Không tìm thấy nhân viên!", null);
+            }
+
+            if (!string.IsNullOrWhiteSpace(dto.QrCode) && dto.QrCode.Trim() != employee.QrCode)
+            {
+                var qrExists = await _context.Employees.AnyAsync(e => e.Id != id && e.QrCode == dto.QrCode.Trim());
+                if (qrExists)
+                {
+                    return (false, $"Mã QR '{dto.QrCode}' đã được gán cho nhân viên khác!", null);
+                }
+                employee.QrCode = dto.QrCode.Trim();
             }
 
             employee.FullName = dto.FullName.Trim();
@@ -164,6 +191,7 @@ namespace NfcAttendance.Api.Services
                 Department = employee.Department,
                 Position = employee.Position,
                 AvatarUrl = employee.AvatarUrl,
+                QrCode = employee.QrCode,
                 Status = employee.Status,
                 CreatedAt = employee.CreatedAt,
                 NfcCardUids = employee.NfcCards.Where(c => c.Status == "ACTIVE").Select(c => c.Uid).ToList()
@@ -184,6 +212,79 @@ namespace NfcAttendance.Api.Services
 
             return (true, $"Đã chuyển trạng thái nhân viên {employee.EmployeeCode} sang INACTIVE.");
         }
+
+        public async Task<(bool Success, string Message, QrResponseDto? Data)> AssignOrGenerateQrCodeAsync(int id, string? customQr)
+        {
+            var employee = await _context.Employees.FindAsync(id);
+            if (employee == null)
+            {
+                return (false, "Không tìm thấy nhân viên!", null);
+            }
+
+            string newQr = !string.IsNullOrWhiteSpace(customQr)
+                ? customQr.Trim()
+                : GenerateSecureQrCode(employee.EmployeeCode);
+
+            // Kiểm tra trùng mã QR với nhân viên khác
+            var qrExists = await _context.Employees.AnyAsync(e => e.Id != id && e.QrCode == newQr);
+            if (qrExists)
+            {
+                return (false, $"Mã QR '{newQr}' đã được gán cho nhân viên khác!", null);
+            }
+
+            employee.QrCode = newQr;
+
+            _context.AuditLogs.Add(new AuditLog
+            {
+                Action = "QR_ASSIGN",
+                Details = $"Gán mã QR '{newQr}' cho nhân viên {employee.EmployeeCode} ({employee.FullName})",
+                CreatedAt = DateTime.Now
+            });
+
+            await _context.SaveChangesAsync();
+
+            return (true, "Gán / Cấp mã QR thành công!", new QrResponseDto
+            {
+                EmployeeId = employee.Id,
+                EmployeeCode = employee.EmployeeCode,
+                FullName = employee.FullName,
+                QrCode = employee.QrCode,
+                GeneratedAt = DateTime.Now
+            });
+        }
+
+        public async Task<(bool Success, string Message, QrResponseDto? Data)> GetQrCodeAsync(int id)
+        {
+            var employee = await _context.Employees.FindAsync(id);
+            if (employee == null)
+            {
+                return (false, "Không tìm thấy nhân viên!", null);
+            }
+
+            if (string.IsNullOrEmpty(employee.QrCode))
+            {
+                // Nếu chưa có, tự động tạo và lưu mã QR cho nhân viên
+                employee.QrCode = GenerateSecureQrCode(employee.EmployeeCode);
+                await _context.SaveChangesAsync();
+            }
+
+            return (true, "Lấy thông tin mã QR thành công!", new QrResponseDto
+            {
+                EmployeeId = employee.Id,
+                EmployeeCode = employee.EmployeeCode,
+                FullName = employee.FullName,
+                QrCode = employee.QrCode,
+                GeneratedAt = DateTime.Now
+            });
+        }
+
+        private static string GenerateSecureQrCode(string employeeCode)
+        {
+            var randomBytes = new byte[6];
+            using var rng = RandomNumberGenerator.Create();
+            rng.GetBytes(randomBytes);
+            var token = Convert.ToHexString(randomBytes);
+            return $"QR_{employeeCode}_{token}";
+        }
     }
 }
-

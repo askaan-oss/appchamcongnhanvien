@@ -12,6 +12,7 @@ namespace NfcAttendance.Api.DTOs
         public string? Department { get; set; }
         public string? Position { get; set; }
         public string? AvatarUrl { get; set; }
+        public string? QrCode { get; set; }
     }
 
     public class UpdateEmployeeDto
@@ -22,6 +23,7 @@ namespace NfcAttendance.Api.DTOs
         public string? Department { get; set; }
         public string? Position { get; set; }
         public string? AvatarUrl { get; set; }
+        public string? QrCode { get; set; }
         public string Status { get; set; } = "ACTIVE";
     }
 
@@ -35,9 +37,24 @@ namespace NfcAttendance.Api.DTOs
         public string? Department { get; set; }
         public string? Position { get; set; }
         public string? AvatarUrl { get; set; }
+        public string? QrCode { get; set; }
         public string Status { get; set; } = "ACTIVE";
         public DateTime CreatedAt { get; set; }
         public List<string> NfcCardUids { get; set; } = new List<string>();
+    }
+
+    public class AssignQrDto
+    {
+        public string? QrCode { get; set; } // Nếu để trống/null, hệ thống tự sinh mã QR bảo mật
+    }
+
+    public class QrResponseDto
+    {
+        public int EmployeeId { get; set; }
+        public string EmployeeCode { get; set; } = string.Empty;
+        public string FullName { get; set; } = string.Empty;
+        public string QrCode { get; set; } = string.Empty;
+        public DateTime GeneratedAt { get; set; } = DateTime.Now;
     }
 
     public class EmployeeFilterDto
@@ -57,4 +74,3 @@ namespace NfcAttendance.Api.DTOs
         public int TotalPages => (int)Math.Ceiling((double)TotalCount / (PageSize > 0 ? PageSize : 10));
     }
 }
-

@@ -33,8 +33,10 @@ namespace NfcAttendance.Api.Data
             modelBuilder.Entity<Employee>(entity =>
             {
                 entity.HasIndex(e => e.EmployeeCode).IsUnique();
+                entity.HasIndex(e => e.QrCode).IsUnique().HasFilter("[QrCode] IS NOT NULL");
                 entity.Property(e => e.EmployeeCode).HasMaxLength(50).IsRequired();
                 entity.Property(e => e.FullName).HasMaxLength(150).IsRequired();
+                entity.Property(e => e.QrCode).HasMaxLength(100);
             });
 
             // Cấu hình bảng NfcCards

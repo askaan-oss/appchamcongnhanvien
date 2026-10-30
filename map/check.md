@@ -1,13 +1,13 @@
-# TÀI LIỆU KIỂM TRA & ĐẶC TẢ CHI TIẾT 27 API VÀ LUỒNG HOẠT ĐỘNG (CHECK.MD)
+# TÀI LIỆU KIỂM TRA & ĐẶC TẢ CHI TIẾT 29 API VÀ LUỒNG HOẠT ĐỘNG (CHECK.MD)
 
 > **Hệ thống**: NFC Attendance System (Hệ thống Chấm công NFC Kiosk Doanh nghiệp)  
 > **Nền tảng**: ASP.NET Core 8 Web API | Entity Framework Core 8 | Microsoft SQL Server | SignalR  
 > **Database**: `Server=HIRVY\SQLEXPRESS;Database=Nhom12_CT4;Trusted_Connection=True;TrustServerCertificate=True`  
-> **Thời gian cập nhật**: 2026-10-30  
+> **Thời gian cập nhật**: 2026-10-31  
 
 ---
 
-## 1. BẢNG TỔNG HỢP DANH MỤC 27 ENDPOINT API
+## 1. BẢNG TỔNG HỢP DANH MỤC 29 ENDPOINT API
 
 | STT | Phương thức | Endpoint API | Nhóm chức năng | Tóm tắt chức năng | Quyền hạn truy cập |
 |:---:|:-----------:|:-------------|:---------------|:------------------|:------------------:|
@@ -15,29 +15,31 @@
 | **2** | `POST` | `/api/v1/auth/refresh` | Nhóm A (Auth) | Cấp mới JWT Token khi token cũ hết hạn | Public |
 | **3** | `GET` | `/api/v1/auth/me` | Nhóm A (Auth) | Lấy thông tin tài khoản đang đăng nhập | Bearer Token |
 | **4** | `GET` | `/api/v1/employees` | Nhóm B (Nhân sự) | Danh sách nhân viên (phân trang, tìm kiếm, lọc phòng ban) | `ADMIN`, `HR` |
-| **5** | `POST` | `/api/v1/employees` | Nhóm B (Nhân sự) | Thêm mới hồ sơ nhân sự | `ADMIN`, `HR` |
+| **5** | `POST` | `/api/v1/employees` | Nhóm B (Nhân sự) | Thêm mới hồ sơ nhân sự (kèm mã QR tùy chọn hoặc tự sinh) | `ADMIN`, `HR` |
 | **6** | `PUT` | `/api/v1/employees/{id}` | Nhóm B (Nhân sự) | Cập nhật thông tin nhân viên theo ID | `ADMIN`, `HR` |
 | **7** | `DELETE` | `/api/v1/employees/{id}` | Nhóm B (Nhân sự) | Vô hiệu hóa nhân viên (chuyển sang `INACTIVE`) | `ADMIN`, `HR` |
-| **8** | `POST` | `/api/v1/nfc/assign` | Nhóm B (Thẻ NFC) | Gán thẻ NTAG215 UID cho một nhân viên | `ADMIN`, `HR` |
-| **9** | `POST` | `/api/v1/nfc/revoke` | Nhóm B (Thẻ NFC) | Khóa/Thu hồi thẻ NFC khi báo mất hoặc đổi thẻ | `ADMIN`, `HR` |
-| **10** | `POST` | `/api/v1/nfc/verify` | Nhóm B (Thẻ NFC) | Xác thực tính hợp lệ và an toàn của thẻ NFC | `KIOSK`, `ADMIN` |
-| **11** | `GET` | `/api/v1/shifts` | Nhóm C (Ca làm) | Lấy danh mục tất cả ca làm việc đang hoạt động | `ADMIN`, `HR` |
-| **12** | `POST` | `/api/v1/shifts` | Nhóm C (Ca làm) | Khai báo ca làm việc mới | `ADMIN` |
-| **13** | `PUT` | `/api/v1/shifts/{id}` | Nhóm C (Ca làm) | Chỉnh sửa khung giờ và thời gian ân hạn của ca | `ADMIN` |
-| **14** | `DELETE` | `/api/v1/shifts/{id}` | Nhóm C (Ca làm) | Ngừng kích hoạt một ca làm việc | `ADMIN` |
-| **15** | `POST` | `/api/v1/shifts/assign` | Nhóm C (Phân ca) | Phân ca làm việc theo tuần cho nhân sự | `ADMIN`, `HR` |
-| **16** | `POST` | `/api/v1/attendance/check-in` | Nhóm D (Chấm công) | Quẹt thẻ/QR Check-In vào ca; bắn SignalR realtime | `KIOSK`, `ADMIN` |
-| **17** | `POST` | `/api/v1/attendance/check-out` | Nhóm D (Chấm công) | Quẹt thẻ/QR Check-Out ra ca; tính giờ làm & tăng ca | `KIOSK`, `ADMIN` |
-| **18** | `GET` | `/api/v1/attendance/today` | Nhóm D (Chấm công) | Danh sách dữ liệu chấm công hôm nay (Today Monitor) | Mọi người dùng |
-| **19** | `GET` | `/api/v1/attendance/history` | Nhóm D (Chấm công) | Lịch sử chấm công (lọc ngày, phòng ban, nhân viên) | `ADMIN`, `HR` |
-| **20** | `POST` | `/api/v1/attendance/manual` | Nhóm D (Chấm công) | Chỉnh sửa/bù công thủ công khi quên quẹt thẻ | `ADMIN`, `HR` |
-| **21** | `POST` | `/api/v1/attendance/sync-offline` | Nhóm D (Chấm công) | Đồng bộ hàng loạt bản ghi chấm công từ Kiosk ngoại tuyến | `KIOSK`, `ADMIN` |
-| **22** | `GET` | `/api/v1/leave-requests` | Nhóm E (Nghỉ phép) | Danh sách đơn xin nghỉ (lọc `PENDING`, `APPROVED`, `REJECTED`) | `ADMIN`, `HR` |
-| **23** | `POST` | `/api/v1/leave-requests` | Nhóm E (Nghỉ phép) | Tạo đơn xin nghỉ phép mới | Mọi người dùng |
-| **24** | `PATCH` | `/api/v1/leave-requests/{id}/status` | Nhóm E (Nghỉ phép) | Phê duyệt hoặc từ chối đơn nghỉ phép kèm ghi chú | `ADMIN`, `HR` |
-| **25** | `GET` | `/api/v1/reports/summary` | Nhóm F (Báo cáo) | 4 chỉ số thống kê Dashboard (Tổng NV, Đang làm, Trễ, Nghỉ) | `ADMIN`, `HR` |
-| **26** | `GET` | `/api/v1/reports/export/excel` | Nhóm F (Báo cáo) | Xuất bảng công chi tiết ra file Excel (`.xlsx`) | `ADMIN`, `HR` |
-| **27** | `GET` | `/api/v1/reports/export/pdf` | Nhóm F (Báo cáo) | Xuất báo cáo tổng hợp chấm công ra file PDF (`.pdf`) | `ADMIN`, `HR` |
+| **8** | `POST` | `/api/v1/employees/{id}/qr` | Nhóm B (Mã QR) | Gán/cập nhật hoặc tự động cấp mã QR mới cho nhân viên | `ADMIN`, `HR` |
+| **9** | `GET` | `/api/v1/employees/{id}/qr` | Nhóm B (Mã QR) | Lấy mã QR cá nhân của nhân viên để hiển thị hoặc in ấn | Mọi người dùng |
+| **10** | `POST` | `/api/v1/nfc/assign` | Nhóm B (Thẻ NFC) | Gán thẻ NTAG215 UID cho một nhân viên | `ADMIN`, `HR` |
+| **11** | `POST` | `/api/v1/nfc/revoke` | Nhóm B (Thẻ NFC) | Khóa/Thu hồi thẻ NFC khi báo mất hoặc đổi thẻ | `ADMIN`, `HR` |
+| **12** | `POST` | `/api/v1/nfc/verify` | Nhóm B (Thẻ NFC) | Xác thực tính hợp lệ và an toàn của thẻ NFC | `KIOSK`, `ADMIN` |
+| **13** | `GET` | `/api/v1/shifts` | Nhóm C (Ca làm) | Lấy danh mục tất cả ca làm việc đang hoạt động | `ADMIN`, `HR` |
+| **14** | `POST` | `/api/v1/shifts` | Nhóm C (Ca làm) | Khai báo ca làm việc mới | `ADMIN` |
+| **15** | `PUT` | `/api/v1/shifts/{id}` | Nhóm C (Ca làm) | Chỉnh sửa khung giờ và thời gian ân hạn của ca | `ADMIN` |
+| **16** | `DELETE` | `/api/v1/shifts/{id}` | Nhóm C (Ca làm) | Ngừng kích hoạt một ca làm việc | `ADMIN` |
+| **17** | `POST` | `/api/v1/shifts/assign` | Nhóm C (Phân ca) | Phân ca làm việc theo tuần cho nhân sự | `ADMIN`, `HR` |
+| **18** | `POST` | `/api/v1/attendance/check-in` | Nhóm D (Chấm công) | Quẹt thẻ/QR Check-In vào ca; bắn SignalR realtime | `KIOSK`, `ADMIN` |
+| **19** | `POST` | `/api/v1/attendance/check-out` | Nhóm D (Chấm công) | Quẹt thẻ/QR Check-Out ra ca; tính giờ làm & tăng ca | `KIOSK`, `ADMIN` |
+| **20** | `GET` | `/api/v1/attendance/today` | Nhóm D (Chấm công) | Danh sách dữ liệu chấm công hôm nay (Today Monitor) | Mọi người dùng |
+| **21** | `GET` | `/api/v1/attendance/history` | Nhóm D (Chấm công) | Lịch sử chấm công (lọc ngày, phòng ban, nhân viên) | `ADMIN`, `HR` |
+| **22** | `POST` | `/api/v1/attendance/manual` | Nhóm D (Chấm công) | Chỉnh sửa/bù công thủ công khi quên quẹt thẻ | `ADMIN`, `HR` |
+| **23** | `POST` | `/api/v1/attendance/sync-offline` | Nhóm D (Chấm công) | Đồng bộ hàng loạt bản ghi chấm công từ Kiosk ngoại tuyến | `KIOSK`, `ADMIN` |
+| **24** | `GET` | `/api/v1/leave-requests` | Nhóm E (Nghỉ phép) | Danh sách đơn xin nghỉ (lọc `PENDING`, `APPROVED`, `REJECTED`) | `ADMIN`, `HR` |
+| **25** | `POST` | `/api/v1/leave-requests` | Nhóm E (Nghỉ phép) | Tạo đơn xin nghỉ phép mới | Mọi người dùng |
+| **26** | `PATCH` | `/api/v1/leave-requests/{id}/status` | Nhóm E (Nghỉ phép) | Phê duyệt hoặc từ chối đơn nghỉ phép kèm ghi chú | `ADMIN`, `HR` |
+| **27** | `GET` | `/api/v1/reports/summary` | Nhóm F (Báo cáo) | 4 chỉ số thống kê Dashboard (Tổng NV, Đang làm, Trễ, Nghỉ) | `ADMIN`, `HR` |
+| **28** | `GET` | `/api/v1/reports/export/excel` | Nhóm F (Báo cáo) | Xuất bảng công chi tiết ra file Excel (`.xlsx`) | `ADMIN`, `HR` |
+| **29** | `GET` | `/api/v1/reports/export/pdf` | Nhóm F (Báo cáo) | Xuất báo cáo tổng hợp chấm công ra file PDF (`.pdf`) | `ADMIN`, `HR` |
 
 ---
 
@@ -193,7 +195,50 @@
   }
   ```
 
-#### 8. Gán thẻ NFC cho nhân viên (`POST /api/v1/nfc/assign`)
+#### 8. Gán hoặc tự động cấp mã QR cho nhân viên (`POST /api/v1/employees/{id}/qr`)
+- **Mục đích**: Lưu một mã QR tùy biến hoặc để trống body `{}` để server tự sinh một mã QR ngẫu nhiên bảo mật (ví dụ: `QR_NV001_8F3B1A`) gắn cho nhân viên, tự động ghi AuditLog.
+- **Quyền truy cập**: `ADMIN`, `HR`.
+- **Request Body**:
+  ```json
+  {
+    "qrCode": "QR_CUSTOM_SECURE_TOKEN_12345"
+  }
+  ```
+  *(Hoặc gửi `{}` để hệ thống tự động sinh chuỗi mã QR an toàn dạng `QR_{EmployeeCode}_{RandomHex}`)*
+- **Response (200 OK)**:
+  ```json
+  {
+    "success": true,
+    "message": "Gán / Cấp mã QR thành công!",
+    "data": {
+      "employeeId": 1,
+      "employeeCode": "NV001",
+      "fullName": "Nguyễn Văn A",
+      "qrCode": "QR_NV001_8F3B1A",
+      "generatedAt": "2026-10-31T01:45:00"
+    }
+  }
+  ```
+
+#### 9. Lấy mã QR cá nhân của nhân viên (`GET /api/v1/employees/{id}/qr`)
+- **Mục đích**: Lấy nội dung chuỗi mã QR của nhân viên phục vụ render mã QR trên Mobile App hoặc in thẻ nhân viên. Nếu nhân viên chưa có mã QR, server sẽ tự động tạo và lưu mã QR mới.
+- **Quyền truy cập**: Mọi người dùng (`ADMIN`, `HR`, `KIOSK`, hoặc Nhân viên).
+- **Response (200 OK)**:
+  ```json
+  {
+    "success": true,
+    "message": "Lấy thông tin mã QR thành công!",
+    "data": {
+      "employeeId": 1,
+      "employeeCode": "NV001",
+      "fullName": "Nguyễn Văn A",
+      "qrCode": "QR_NV001_8F3B1A",
+      "generatedAt": "2026-10-31T01:45:00"
+    }
+  }
+  ```
+
+#### 10. Gán thẻ NFC cho nhân viên (`POST /api/v1/nfc/assign`)
 - **Mục đích**: Liên kết UID thẻ NTAG215 với nhân viên, tự động ghi AuditLog.
 - **Request Body**:
   ```json
@@ -204,7 +249,7 @@
   }
   ```
 
-#### 9. Thu hồi hoặc khóa thẻ NFC (`POST /api/v1/nfc/revoke`)
+#### 11. Thu hồi hoặc khóa thẻ NFC (`POST /api/v1/nfc/revoke`)
 - **Mục đích**: Khóa thẻ (`Status = "LOCKED"`) khi nhân viên báo mất thẻ, ngăn kẻ xấu quẹt gian lận.
 - **Request Body**:
   ```json
@@ -214,7 +259,7 @@
   }
   ```
 
-#### 10. Xác thực thẻ NFC bảo mật (`POST /api/v1/nfc/verify`)
+#### 12. Xác thực thẻ NFC bảo mật (`POST /api/v1/nfc/verify`)
 - **Mục đích**: Kiểm tra thẻ tồn tại, thẻ đang `ACTIVE`, nhân viên sở hữu đang `ACTIVE` và kiểm tra khóa PWD/PACK phần cứng.
 - **Request Body**:
   ```json

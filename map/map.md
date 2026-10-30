@@ -76,7 +76,7 @@ Cấu trúc 9 bảng dữ liệu được cấu hình và khởi tạo tự đ�
 1. **`Users`**: Tài khoản quản trị và thiết bị:
    - `Id` (INT IDENTITY, PK), `Username` (NVARCHAR(50), Unique, Not Null), `PasswordHash` (NVARCHAR(256), Not Null), `Role` (NVARCHAR(20), Not Null: `ADMIN`, `HR`, `KIOSK`), `IsActive` (BIT, Default 1), `RefreshToken` (NVARCHAR(MAX) NULL), `RefreshTokenExpiryTime` (DATETIME2 NULL), `CreatedAt` (DATETIME2), `UpdatedAt` (DATETIME2 NULL).
 2. **`Employees`**: Hồ sơ nhân sự:
-   - `Id` (INT IDENTITY, PK), `EmployeeCode` (NVARCHAR(50), Unique, Not Null), `FullName` (NVARCHAR(150), Not Null), `Phone` (NVARCHAR(20) NULL), `Email` (NVARCHAR(100) NULL), `Department` (NVARCHAR(100) NULL), `Position` (NVARCHAR(100) NULL), `AvatarUrl` (NVARCHAR(MAX) NULL), `Status` (NVARCHAR(20), Default 'ACTIVE'), `CreatedAt` (DATETIME2).
+   - `Id` (INT IDENTITY, PK), `EmployeeCode` (NVARCHAR(50), Unique, Not Null), `FullName` (NVARCHAR(150), Not Null), `Phone` (NVARCHAR(20) NULL), `Email` (NVARCHAR(100) NULL), `Department` (NVARCHAR(100) NULL), `Position` (NVARCHAR(100) NULL), `AvatarUrl` (NVARCHAR(MAX) NULL), `QrCode` (NVARCHAR(100) Unique Filtered NULL), `Status` (NVARCHAR(20), Default 'ACTIVE'), `CreatedAt` (DATETIME2).
 3. **`NfcCards`**: Quản lý thẻ NFC gán cho nhân sự:
    - `Id` (INT IDENTITY, PK), `EmployeeId` (INT, FK -> Employees, Cascade Delete), `Uid` (NVARCHAR(50), Unique, Not Null), `CardType` (NVARCHAR(50), Default 'NTAG215'), `IsProtected` (BIT, Default 1), `Status` (NVARCHAR(20), Default 'ACTIVE'), `AssignedAt` (DATETIME2).
 4. **`Shifts`**: Danh mục ca làm việc:
@@ -96,13 +96,13 @@ Cấu trúc 9 bảng dữ liệu được cấu hình và khởi tạo tự đ�
 
 ---
 
-## 4. BẢNG ĐẶC TẢ TẦNG BACKEND (27 ENDPOINTS RESTFUL API)
+## 4. BẢNG ĐẶC TẢ TẦNG BACKEND (29 ENDPOINTS RESTFUL API)
 
-Toàn bộ 27 endpoints đã được hiện thực đầy đủ tại project [`NfcAttendance`](file:///d:/vsXanh/appchamcongnhanvien/NfcAttendance/NfcAttendance.csproj), kiểm thử chi tiết trong tài liệu [`map/check.md`](file:///d:/vsXanh/appchamcongnhanvien/map/check.md):
+Toàn bộ 29 endpoints đã được hiện thực đầy đủ tại project [`NfcAttendance`](file:///d:/vsXanh/appchamcongnhanvien/NfcAttendance/NfcAttendance.csproj), kiểm thử chi tiết trong tài liệu [`map/check.md`](file:///d:/vsXanh/appchamcongnhanvien/map/check.md):
 
 ```
 ┌──────┬────────────────────────────────────────────────────────────────────────────────────────┐
-│ NHÓM │ DANH SÁCH 27 ENDPOINTS CHUẨN (/api/v1)                                                 │
+│ NHÓM │ DANH SÁCH 29 ENDPOINTS CHUẨN (/api/v1)                                                 │
 ├──────┼────────────────────────────────────────────────────────────────────────────────────────┤
 │  A   │ 1. POST   /api/v1/auth/login                                                           │
 │      │ 2. POST   /api/v1/auth/refresh                                                         │
@@ -112,30 +112,32 @@ Toàn bộ 27 endpoints đã được hiện thực đầy đủ tại project [
 │      │ 5. POST   /api/v1/employees                                                            │
 │      │ 6. PUT    /api/v1/employees/{id}                                                       │
 │      │ 7. DELETE /api/v1/employees/{id}                                                       │
-│      │ 8. POST   /api/v1/nfc/assign                                                           │
-│      │ 9. POST   /api/v1/nfc/revoke                                                           │
-│      │ 10. POST  /api/v1/nfc/verify                                                           │
+│      │ 8. POST   /api/v1/employees/{id}/qr                                                    │
+│      │ 9. GET    /api/v1/employees/{id}/qr                                                    │
+│      │ 10. POST  /api/v1/nfc/assign                                                           │
+│      │ 11. POST  /api/v1/nfc/revoke                                                           │
+│      │ 12. POST  /api/v1/nfc/verify                                                           │
 ├──────┼────────────────────────────────────────────────────────────────────────────────────────┤
-│  C   │ 11. GET   /api/v1/shifts                                                               │
-│      │ 12. POST  /api/v1/shifts                                                               │
-│      │ 13. PUT   /api/v1/shifts/{id}                                                          │
-│      │ 14. DELETE/api/v1/shifts/{id}                                                          │
-│      │ 15. POST  /api/v1/shifts/assign                                                        │
+│  C   │ 13. GET   /api/v1/shifts                                                               │
+│      │ 14. POST  /api/v1/shifts                                                               │
+│      │ 15. PUT   /api/v1/shifts/{id}                                                          │
+│      │ 16. DELETE/api/v1/shifts/{id}                                                          │
+│      │ 17. POST  /api/v1/shifts/assign                                                        │
 ├──────┼────────────────────────────────────────────────────────────────────────────────────────┤
-│  D   │ 16. POST  /api/v1/attendance/check-in                                                  │
-│      │ 17. POST  /api/v1/attendance/check-out                                                 │
-│      │ 18. GET   /api/v1/attendance/today                                                     │
-│      │ 19. GET   /api/v1/attendance/history                                                   │
-│      │ 20. POST  /api/v1/attendance/manual                                                    │
-│      │ 21. POST  /api/v1/attendance/sync-offline                                              │
+│  D   │ 18. POST  /api/v1/attendance/check-in                                                  │
+│      │ 19. POST  /api/v1/attendance/check-out                                                 │
+│      │ 20. GET   /api/v1/attendance/today                                                     │
+│      │ 21. GET   /api/v1/attendance/history                                                   │
+│      │ 22. POST  /api/v1/attendance/manual                                                    │
+│      │ 23. POST  /api/v1/attendance/sync-offline                                              │
 ├──────┼────────────────────────────────────────────────────────────────────────────────────────┤
-│  E   │ 22. GET   /api/v1/leave-requests                                                       │
-│      │ 23. POST  /api/v1/leave-requests                                                       │
-│      │ 24. PATCH /api/v1/leave-requests/{id}/status                                           │
+│  E   │ 24. GET   /api/v1/leave-requests                                                       │
+│      │ 25. POST  /api/v1/leave-requests                                                       │
+│      │ 26. PATCH /api/v1/leave-requests/{id}/status                                           │
 ├──────┼────────────────────────────────────────────────────────────────────────────────────────┤
-│  F   │ 25. GET   /api/v1/reports/summary                                                      │
-│      │ 26. GET   /api/v1/reports/export/excel                                                 │
-│      │ 27. GET   /api/v1/reports/export/pdf                                                   │
+│  F   │ 27. GET   /api/v1/reports/summary                                                      │
+│      │ 28. GET   /api/v1/reports/export/excel                                                 │
+│      │ 29. GET   /api/v1/reports/export/pdf                                                   │
 └──────┴────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 

@@ -146,6 +146,10 @@ namespace NfcAttendance.Api.Migrations
                     b.Property<string>("Position")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("QrCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -154,6 +158,10 @@ namespace NfcAttendance.Api.Migrations
 
                     b.HasIndex("EmployeeCode")
                         .IsUnique();
+
+                    b.HasIndex("QrCode")
+                        .IsUnique()
+                        .HasFilter("[QrCode] IS NOT NULL");
 
                     b.ToTable("Employees");
                 });

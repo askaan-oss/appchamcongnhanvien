@@ -83,6 +83,35 @@ namespace NfcAttendance.Api.Controllers
             }
             return Ok(new { success = true, message });
         }
+
+        /// <summary>
+        /// Gán hoặc tự động cấp mã QR mới cho nhân viên
+        /// </summary>
+        [HttpPost("{id}/qr")]
+        [Authorize(Roles = "ADMIN,HR")]
+        public async Task<IActionResult> AssignQrCode(int id, [FromBody] AssignQrDto? dto)
+        {
+            var (success, message, data) = await _employeeService.AssignOrGenerateQrCodeAsync(id, dto?.QrCode);
+            if (!success)
+            {
+                return BadRequest(new { success = false, message });
+            }
+            return Ok(new { success = true, message, data });
+        }
+
+        /// <summary>
+        /// Lấy thông tin mã QR của nhân viên
+        /// </summary>
+        [HttpGet("{id}/qr")]
+        public async Task<IActionResult> GetQrCode(int id)
+        {
+            var (success, message, data) = await _employeeService.GetQrCodeAsync(id);
+            if (!success)
+            {
+                return NotFound(new { success = false, message });
+            }
+            return Ok(new { success = true, message, data });
+        }
     }
 }
 

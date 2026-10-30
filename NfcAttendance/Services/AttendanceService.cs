@@ -52,8 +52,9 @@ namespace NfcAttendance.Api.Services
             }
             else if (!string.IsNullOrEmpty(request.QrPayload))
             {
+                var qr = request.QrPayload.Trim();
                 employee = await _context.Employees
-                    .FirstOrDefaultAsync(e => e.EmployeeCode == request.QrPayload.Trim() && e.Status == "ACTIVE");
+                    .FirstOrDefaultAsync(e => (e.QrCode == qr || e.EmployeeCode == qr) && e.Status == "ACTIVE");
             }
 
             if (employee == null)
