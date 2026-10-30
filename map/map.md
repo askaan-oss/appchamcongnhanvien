@@ -3,7 +3,9 @@
 > **Mục tiêu**: Tách toàn bộ kiến trúc nguyên khối SQLite trên ứng dụng di động hiện tại thành mô hình **4 tầng độc lập chuẩn hóa**:
 > 1. **TẦNG BACKEND (ASP.NET Core Web API - .NET 8 / C#)**: Đã hoàn thiện 100% làm chuẩn mực trung tâm (`NfcAttendance`), cung cấp toàn bộ 27 RESTful APIs, phân quyền JWT Bearer, động cơ tính công (trễ/sớm/tăng ca/giờ làm), đẩy sự kiện SignalR Realtime (`/hubs/attendance`) và quản lý an toàn thẻ NFC NTAG215.
 > 2. **TẦNG CƠ SỞ DỮ LIỆU (Microsoft SQL Server)**: Cơ sở dữ liệu quan hệ doanh nghiệp tập trung `Nhom12_CT4` tại máy chủ `HIRVY\SQLEXPRESS`, quản lý 9 bảng chuẩn hóa với tính toàn vẹn dữ liệu ACID và chỉ mục tối ưu truy vấn.
-> 3. **TẦNG MOBILE APP (Flutter / Dart)**: Ứng dụng di động chuyên dụng làm **Máy chấm công Kiosk** (Station Mode) đặt cố định tại trạm cửa/văn phòng, hoạt động hoàn toàn qua RESTful API kết nối Backend, tối ưu cho quét thẻ NFC (NTAG215 chống sao chép) và quét mã QR chấm công, có hỗ trợ Offline Local Cache và tự động đồng bộ hàng loạt qua giao dịch SQL.
+> 3. **TẦNG MOBILE APP (Flutter / Dart - Hỗ trợ Chế độ kép Dual-Mode)**: 
+>    - **Chế độ 1 - Kiosk Chấm công trạm (Station Mode)**: Cài đặt cố định tại trạm cửa/văn phòng, tối ưu quẹt thẻ NFC NTAG215 và quét mã QR một chạm, phản hồi 3 giây, hỗ trợ Offline SQLite & tự động đồng bộ khi có mạng lại.
+>    - **Chế độ 2 - Trợ lý Nhân sự HR (HR Assistant Mode - Phương án A)**: Cài trên điện thoại cá nhân của HR, cho phép dùng cảm biến NFC lưng điện thoại để đọc mã UID và gán thẻ trực tiếp cho nhân viên trong 3 giây (không cần mua đầu đọc thẻ USB cắm máy tính), khóa thẻ mất tức thì, xem Today Monitor bỏ túi.
 > 4. **TẦNG FRONTEND WEB (React.js)**: Ứng dụng web dành cho Ban quản trị / HR quản lý nhân sự, cấu hình ca làm việc, duyệt đơn nghỉ phép, giám sát chấm công thời gian thực (Today Monitor qua SignalR) và xuất báo cáo bảng công Excel/PDF.
 
 ---
@@ -16,12 +18,12 @@
 │                                                                        │
 │   ┌────────────────────────────────┐  ┌─────────────────────────────┐  │
 │   │    TẦNG FRONTEND WEB           │  │      TẦNG MOBILE APP        │  │
-│   │       (React.js)               │  │      (Flutter / Dart)       │  │
-│   │ - Bảng điều khiển (Dashboard)  │  │ - Máy Kiosk Chấm công trạm  │  │
-│   │ - Quản lý Nhân sự, Ca làm việc │  │ - Quẹt thẻ NFC (NTAG215)    │  │
-│   │ - Quản lý & Duyệt đơn nghỉ phép│  │ - Quét mã QR chấm công      │  │
-│   │ - Giám sát Realtime (SignalR)  │  │ - Phản hồi âm thanh/hình ảnh│  │
-│   │ - Xuất báo cáo Excel / PDF     │  │ - Offline Local Cache/Sync  │  │
+│   │       (React.js)               │  │  (Flutter Dual-Mode:        │  │
+│   │ - Bảng điều khiển (Dashboard)  │  │   Kiosk + Trợ lý HR Mobile) │  │
+│   │ - Quản lý Nhân sự, Ca làm việc │  │ - Kiosk: Quẹt thẻ NFC/QR 3s │  │
+│   │ - Quản lý & Duyệt đơn nghỉ phép│  │ - Kiosk: Offline Cache/Sync │  │
+│   │ - Giám sát Realtime (SignalR)  │  │ - HR: Chạm lưng máy gán thẻ │  │
+│   │ - Xuất báo cáo Excel / PDF     │  │ - HR: Khóa thẻ, Today Monitor│  │
 │   └───────────────┬────────────────┘  └──────────────┬──────────────┘  │
 └───────────────────┼──────────────────────────────────┼─────────────────┘
                     │   HTTPS / RESTful API / SignalR  │
@@ -65,7 +67,7 @@
 | **TẦNG BACKEND** | **ASP.NET Core Web API (.NET 8 C#)** | Khung nền tảng backend doanh nghiệp mạnh mẽ (`NfcAttendance`); EF Core 8 quản lý dữ liệu; tích hợp sẵn DI, JWT Bearer Token, Swagger UI, Global Error Middleware và SignalR realtime push. | **ĐÃ HOÀN THÀNH 100% (27 API)** |
 | **TẦNG CƠ SỞ DỮ LIỆU** | **Microsoft SQL Server (MS SQL)** | Cơ sở dữ liệu `Nhom12_CT4` trên `HIRVY\SQLEXPRESS`; đảm bảo tính toàn vẹn giao dịch (ACID); DbInitializer tự động tạo bảng và nạp dữ liệu mồi chuẩn khi khởi động. | **SẴN SÀNG KẾT NỐI** |
 | **TẦNG FRONTEND WEB** | **React.js (Vite + Tailwind)** | Single Page Application (SPA); quản lý biểu đồ Dashboard, DataTable nhân sự/ca làm, duyệt đơn nghỉ phép, kết nối SignalR nhận thông báo quẹt thẻ trực tiếp và tải file Excel/PDF. | Đang triển khai |
-| **TẦNG MOBILE APP** | **Flutter / Dart** | Thiết bị Kiosk chấm công chuyên dụng đặt tại văn phòng/xưởng; giao tiếp 100% qua 27 RESTful API; điều khiển phần cứng NFC NTAG215 và Camera QR Code; duy trì cơ chế Offline-First khi mất mạng. | Đang triển khai |
+| **TẦNG MOBILE APP** | **Flutter / Dart (Dual-Mode)** | Hỗ trợ 2 chế độ: (1) Máy Kiosk chấm công trạm cố định (NFC/QR, phản hồi 3s, offline-first); (2) Trợ lý di động cho HR (chạm lưng điện thoại đọc UID gán thẻ trực tiếp cho nhân viên không cần đầu đọc USB, khóa thẻ mất, xem Today Monitor bỏ túi). | Đang triển khai |
 
 ---
 
@@ -273,22 +275,22 @@ class AppConfig {
 
 ---
 
-### GIAI ĐOẠN 3: TÁI CẤU TRÚC TẦNG MOBILE APP (Flutter / Dart) - KIOSK CHUYÊN DỤNG
+### GIAI ĐOẠN 3: PHÁT TRIỂN TẦNG MOBILE APP (Flutter Dual-Mode: Kiosk & Trợ lý HR)
 - [ ] **3.1. Chuyển đổi tầng Dữ liệu (Data Layer) & Tích hợp .env**:
-  - Cài đặt thư viện `flutter_dotenv` nạp biến môi trường từ file `mobile/.env` (`API_BASE_URL`, `DEFAULT_DEVICE_ID`, `CONNECT_TIMEOUT`, `RECEIVE_TIMEOUT`).
+  - Cài đặt thư viện `flutter_dotenv` nạp biến môi trường từ file `mobile/.env` (`API_BASE_URL`, `DEFAULT_DEVICE_ID`, `CONNECT_TIMEOUT`, `RECEIVE_TIMEOUT`, `ADMIN_PIN`).
   - Xây dựng lớp cấu hình `AppConfig` đọc trực tiếp từ `dotenv.env`.
-  - Tạo `api_service.dart` gọi API `POST /api/v1/attendance/check-in` và `POST /api/v1/attendance/check-out`.
-  - Chuyển SQLite cục bộ thành kho đệm Offline Cache khi mất mạng.
-- [ ] **3.2. Tinh gọn Giao diện Chuyên dụng Kiosk Chấm công (Station UI)**:
-  - Loại bỏ các màn hình cá nhân không cần thiết.
+  - Tạo `api_service.dart` tích hợp 7 API: chấm công `check-in`, xác thực thẻ `verify`, đồng bộ `sync-offline`, đăng nhập HR `login`, danh sách `employees`, gán thẻ `nfc/assign`, cấp mã `qr`.
+  - Quản trị CSDL SQLite cục bộ cho chế độ Offline Cache của Kiosk.
+- [ ] **3.2. Phân hệ 1 - Màn hình Chuyên dụng Kiosk Chấm công trạm (Station UI)**:
   - Màn hình chờ quẹt thẻ NFC toàn màn hình: Phản hồi âm thanh *"Bíp"*, hiển thị ảnh đại diện, họ tên, giờ quẹt, trạng thái trong 3 giây.
   - Quét mã QR chấm công tích hợp camera.
-  - Màn hình cài đặt máy trạm Kiosk (Device ID, URL Server Backend).
-- [ ] **3.3. Tối ưu Cơ chế Offline-First & Tự động đồng bộ**:
-  - Khi mất mạng: Lưu trữ vào SQLite nội bộ (`isSynced = 0`).
-  - Khi có mạng: Tự động gửi gói `POST /api/v1/attendance/sync-offline` lên Backend và cập nhật `isSynced = 1`.
-- [ ] **3.4. Giữ vững tính năng Bảo mật thẻ NFC NTAG215**:
-  - Gọi API `POST /api/v1/nfc/verify` để xác thực thẻ trước khi ghi nhận.
+  - Cơ chế Offline-First: Lưu SQLite nội bộ khi mất mạng $\rightarrow$ Tự động gửi gói `POST /api/v1/attendance/sync-offline` khi có mạng lại.
+  - Màn hình cài đặt máy trạm Kiosk bảo vệ bằng mã PIN `888888`.
+- [ ] **3.3. Phân hệ 2 - Chế độ Trợ lý Nhân sự HR Bỏ túi (HR Assistant Mode - Phương án A)**:
+  - Màn hình đăng nhập HR lấy JWT Token.
+  - Màn hình chạm lưng điện thoại đọc UID thẻ NFC NTAG215 và tự động gọi API `POST /api/v1/nfc/assign` gán trực tiếp cho nhân viên (không cần đầu đọc USB cắm máy tính).
+  - Nút bấm khóa thẻ mất tức thì (`POST /api/v1/nfc/revoke`).
+  - Màn hình Today Monitor bỏ túi xem nhanh danh sách đi làm hôm nay.
 
 ---
 
@@ -378,17 +380,23 @@ appchamcongnhanvien/
 │   ├── Dockerfile
 │   └── package.json
 │
-├── mobile/                                 # TẦNG MOBILE APP (Flutter / Dart - Kiosk Chuyên dụng)
+├── mobile/                                 # TẦNG MOBILE APP (Flutter Dual-Mode: Kiosk + Trợ lý HR)
 │   ├── assets/
-│   │   └── .env                            # File nạp runtime assets cho flutter_dotenv
+│   │   ├── .env                            # File nạp runtime assets cho flutter_dotenv
+│   │   ├── images/                         # Logo, Avatar mặc định, Minh họa chạm lưng máy NFC
+│   │   └── sounds/                         # Âm thanh beep_success.mp3, beep_error.mp3
 │   ├── lib/
-│   │   ├── config/                         # AppConfig.dart đọc biến từ dotenv
-│   │   ├── models/                         # Attendance, Shift, KioskConfig
-│   │   ├── screens/                        # KioskAttendanceScreen (NFC), KioskQrScanScreen, KioskSettings
-│   │   ├── services/                       # ApiService (REST), NfcSecurityService, OfflineSyncService
-│   │   └── main.dart
-│   ├── .env                                # File cấu hình biến môi trường Mobile Kiosk
-│   ├── .env.example                        # File mẫu biến môi trường Mobile Kiosk
+│   │   ├── config/                         # AppConfig.dart, AppTheme.dart, Constants
+│   │   ├── models/                         # AttendanceRequest, Response, OfflineRecord, EmployeeModel
+│   │   ├── services/                       # ApiService (REST), NfcService, OfflineDb, SyncService
+│   │   ├── screens/
+│   │   │   ├── mode_select_screen.dart     # Chọn Chế độ: Kiosk trạm hoặc Trợ lý HR
+│   │   │   ├── kiosk/                      # KioskHome (NFC), QrScanner, KioskSettings
+│   │   │   └── hr/                         # HRLogin, HRDashboard, Quét lưng máy gán NFC, Quản lý QR
+│   │   ├── widgets/                        # ResultModal, RadarWaveAnimation, StatusBadge
+│   │   └── main.dart                       # Điểm khởi chạy Flutter
+│   ├── .env                                # File cấu hình biến môi trường Mobile
+│   ├── .env.example                        # File mẫu biến môi trường Mobile
 │   └── pubspec.yaml
 │
 └── map/                                    # TÀI LIỆU HỆ THỐNG

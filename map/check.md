@@ -529,22 +529,25 @@ sequenceDiagram
 
 ---
 
-### LUỒNG 2: VÒNG ĐỜI HỒ SƠ & THẺ NFC NTAG215 (EMPLOYEE & NFC LIFECYCLE)
+### LUỒNG 2: VÒNG ĐỜI HỒ SƠ, THẺ NFC & MÃ QR (EMPLOYEE, NFC & QR LIFECYCLE)
 
 ```mermaid
 flowchart TD
-    A["Tạo nhân viên mới (POST /employees)"] --> B["Kiểm tra trùng EmployeeCode"]
+    A["Tạo nhân viên mới (POST /employees)"] --> B["Kiểm tra trùng EmployeeCode / QrCode"]
     B -- Đã tồn tại --> B1["Báo lỗi 400"]
-    B -- Hợp lệ --> C["Lưu Employee (Status: ACTIVE)"]
-    C --> D["Gán thẻ NFC (POST /nfc/assign)"]
-    D --> E["Kiểm tra Thẻ UID trong bảng NfcCards"]
+    B -- Hợp lệ --> C["Lưu Employee (Status: ACTIVE, sinh QrCode)"]
+    C --> D{"Cách thức Gán thẻ NFC NTAG215"}
+    D -- Cách 1: Web Admin --> D1["Đặt thẻ lên đầu đọc USB trên máy tính HR"]
+    D -- Cách 2: Mobile App HR Mode (Phương án A) --> D2["Chạm thẻ vào lưng điện thoại HR để đọc UID"]
+    D1 & D2 --> D3["Gọi API: POST /nfc/assign { employeeId, uid }"]
+    D3 --> E["Kiểm tra Thẻ UID trong bảng NfcCards"]
     E -- Thẻ đã gán người khác --> E1["Báo lỗi 400"]
     E -- Thẻ khả dụng --> F["Lưu NfcCard (ACTIVE, NTAG215) & Ghi AuditLog"]
-    F --> G["Kiosk quét thẻ (POST /nfc/verify)"]
+    F --> G["Nhân viên chấm công tại Kiosk (NFC hoặc mã QR)"]
     G --> H{"Kiểm tra Trạng thái thẻ & Nhân viên"}
     H -- Thẻ khóa/NV Inactive --> H1["Từ chối quẹt"]
-    H -- Hợp lệ --> H2["Cho phép chấm công"]
-    H2 -. Báo mất thẻ .-> I["Khóa thẻ (POST /nfc/revoke: LOCKED)"]
+    H -- Hợp lệ --> H2["Cho phép chấm công (3 giây phản hồi)"]
+    H2 -. Báo mất thẻ .-> I["Khóa thẻ ngay trên App Mobile HR hoặc Web (POST /nfc/revoke: LOCKED)"]
 ```
 
 ---
