@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using NfcAttendance.Api.Data;
@@ -24,18 +25,31 @@ namespace NfcAttendance.Api.Services
                 return (false, "Không tìm thấy nhân viên tương ứng!");
             }
 
+            var cleanUid = (dto.Uid ?? string.Empty).Trim().ToUpper();
+            if (string.IsNullOrWhiteSpace(cleanUid))
+            {
+                return (false, "Mã thẻ UID không hợp lệ hoặc để trống!");
+            }
+
+            // Dọn dẹp các thẻ rác/thẻ rỗng nếu có trong cơ sở dữ liệu
+            var emptyCards = await _context.NfcCards.Where(c => string.IsNullOrWhiteSpace(c.Uid)).ToListAsync();
+            if (emptyCards.Any())
+            {
+                _context.NfcCards.RemoveRange(emptyCards);
+            }
+
             // Kiểm tra xem thẻ UID này đã được dùng cho nhân viên khác chưa
-            var existingCard = await _context.NfcCards.FirstOrDefaultAsync(c => c.Uid == dto.Uid.Trim());
+            var existingCard = await _context.NfcCards.FirstOrDefaultAsync(c => c.Uid.ToUpper() == cleanUid);
             if (existingCard != null)
             {
                 if (existingCard.EmployeeId != dto.EmployeeId)
                 {
-                    return (false, $"Thẻ NFC UID '{dto.Uid}' đang được gán cho nhân viên khác!");
+                    return (false, $"Thẻ NFC UID '{cleanUid}' đang được gán cho nhân viên khác!");
                 }
 
                 // Nếu là thẻ của chính nhân viên này nhưng bị khóa, kích hoạt lại
                 existingCard.Status = "ACTIVE";
-                existingCard.CardType = dto.CardType;
+                existingCard.CardType = string.IsNullOrWhiteSpace(dto.CardType) ? "NTAG215" : dto.CardType;
                 existingCard.AssignedAt = DateTime.Now;
             }
             else
@@ -43,7 +57,7 @@ namespace NfcAttendance.Api.Services
                 var newCard = new NfcCard
                 {
                     EmployeeId = dto.EmployeeId,
-                    Uid = dto.Uid.Trim(),
+                    Uid = cleanUid,
                     CardType = string.IsNullOrWhiteSpace(dto.CardType) ? "NTAG215" : dto.CardType,
                     IsProtected = true,
                     Status = "ACTIVE",
@@ -56,17 +70,18 @@ namespace NfcAttendance.Api.Services
             _context.AuditLogs.Add(new AuditLog
             {
                 Action = "NFC_ASSIGN",
-                Details = $"Gán thẻ {dto.Uid} cho nhân viên ID {dto.EmployeeId} ({employee.FullName})",
+                Details = $"Gán thẻ {cleanUid} cho nhân viên ID {dto.EmployeeId} ({employee.FullName})",
                 CreatedAt = DateTime.Now
             });
 
             await _context.SaveChangesAsync();
-            return (true, $"Gán thẻ NFC {dto.Uid} cho nhân viên {employee.FullName} thành công!");
+            return (true, $"Gán thẻ NFC {cleanUid} cho nhân viên {employee.FullName} thành công!");
         }
 
         public async Task<(bool Success, string Message)> RevokeNfcAsync(RevokeNfcDto dto)
         {
-            var card = await _context.NfcCards.Include(c => c.Employee).FirstOrDefaultAsync(c => c.Uid == dto.CardUid.Trim());
+            var cleanUid = (dto.CardUid ?? string.Empty).Trim().ToUpper();
+            var card = await _context.NfcCards.Include(c => c.Employee).FirstOrDefaultAsync(c => c.Uid.ToUpper() == cleanUid);
             if (card == null)
             {
                 return (false, $"Không tìm thấy thẻ NFC UID '{dto.CardUid}'!");
@@ -78,17 +93,18 @@ namespace NfcAttendance.Api.Services
             _context.AuditLogs.Add(new AuditLog
             {
                 Action = "NFC_REVOKE",
-                Details = $"Thu hồi/Khóa thẻ {dto.CardUid} (Nhân viên: {card.Employee?.FullName}). Lý do: {dto.Reason ?? "Không có"}",
+                Details = $"Thu hồi/Khóa thẻ {cleanUid} (Nhân viên: {card.Employee?.FullName}). Lý do: {dto.Reason ?? "Không có"}",
                 CreatedAt = DateTime.Now
             });
 
             await _context.SaveChangesAsync();
-            return (true, $"Đã khóa thẻ NFC {dto.CardUid} thành công!");
+            return (true, $"Đã khóa thẻ NFC {cleanUid} thành công!");
         }
 
         public async Task<VerifyNfcResponseDto> VerifyNfcAsync(VerifyNfcDto dto)
         {
-            var card = await _context.NfcCards.Include(c => c.Employee).FirstOrDefaultAsync(c => c.Uid == dto.CardUid.Trim());
+            var cleanUid = (dto.CardUid ?? string.Empty).Trim().ToUpper();
+            var card = await _context.NfcCards.Include(c => c.Employee).FirstOrDefaultAsync(c => c.Uid.ToUpper() == cleanUid);
             if (card == null)
             {
                 return new VerifyNfcResponseDto
@@ -121,8 +137,6 @@ namespace NfcAttendance.Api.Services
                 };
             }
 
-            // Nếu có password và pack xác thực phần cứng NTAG215
-            // Giả lập kiểm tra hoặc xác thực khóa chuẩn
             return new VerifyNfcResponseDto
             {
                 IsValid = true,
@@ -134,4 +148,3 @@ namespace NfcAttendance.Api.Services
         }
     }
 }
-

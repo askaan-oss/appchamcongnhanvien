@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using NfcAttendance.Api.Data;
+using NfcAttendance.Api.Data; 
 using NfcAttendance.Api.Hubs;
 using NfcAttendance.Api.Middlewares;
 using NfcAttendance.Api.Services;

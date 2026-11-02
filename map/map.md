@@ -232,7 +232,7 @@ class AppConfig {
 ### GIAI ĐOẠN 1: THIẾT LẬP SQL SERVER & XÂY DỰNG ASP.NET CORE WEB API
 - [x] **1.1. Cấu hình Microsoft SQL Server & DbInitializer**:
   - [x] Cấu hình chuỗi kết nối chuẩn tới `Server=HIRVY\SQLEXPRESS;Database=Nhom12_CT4`.
-  - [x] Viết `DbInitializer.cs` tự động `EnsureCreated()`, khởi tạo tài khoản quản trị `admin` (`Admin@123`), ca làm mẫu và nhân viên mẫu NV001 gán thẻ NFC `04A1B2C3D4E5F6`.
+  - [x] Viết `DbInitializer.cs` tự động `EnsureCreated()`, khởi tạo tài khoản quản trị `admin` (`123123`), ca làm mẫu và nhân viên mẫu NV001 gán thẻ NFC `04A1B2C3D4E5F6`.
 - [x] **1.2. Khởi tạo & Cấu hình Dự án ASP.NET Core Web API (.NET 8)**:
   - [x] Dự án `NfcAttendance.csproj` với RootNamespace `NfcAttendance.Api`.
   - [x] Cài đặt các thư viện NuGet: `Microsoft.EntityFrameworkCore.SqlServer`, `Microsoft.EntityFrameworkCore.Tools`, `Microsoft.AspNetCore.Authentication.JwtBearer`, `ClosedXML`, `BCrypt.Net-Next`, `Swashbuckle.AspNetCore`.

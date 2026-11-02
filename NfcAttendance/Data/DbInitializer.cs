@@ -10,17 +10,46 @@ namespace NfcAttendance.Api.Data
         {
             context.Database.EnsureCreated();
 
-            // 1. Tạo tài khoản Admin mặc định (mật khẩu: Admin@123)
-            if (!context.Users.Any(u => u.Username == "admin"))
+            // 1. Khởi tạo & Cập nhật tài khoản Admin theo map/account.txt (admin / 123123)
+            var adminUser = context.Users.FirstOrDefault(u => u.Username == "admin");
+            if (adminUser == null)
             {
                 context.Users.Add(new User
                 {
                     Username = "admin",
-                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin@123"),
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("123123"),
                     Role = "ADMIN",
                     IsActive = true,
                     CreatedAt = DateTime.Now
                 });
+            }
+            else
+            {
+                adminUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword("123123");
+                adminUser.Role = "ADMIN";
+                adminUser.IsActive = true;
+                adminUser.UpdatedAt = DateTime.Now;
+            }
+
+            // Tạo/Cập nhật thêm tài khoản HR hỗ trợ (hr / 123123)
+            var hrUser = context.Users.FirstOrDefault(u => u.Username == "hr");
+            if (hrUser == null)
+            {
+                context.Users.Add(new User
+                {
+                    Username = "hr",
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("123123"),
+                    Role = "HR",
+                    IsActive = true,
+                    CreatedAt = DateTime.Now
+                });
+            }
+            else
+            {
+                hrUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword("123123");
+                hrUser.Role = "HR";
+                hrUser.IsActive = true;
+                hrUser.UpdatedAt = DateTime.Now;
             }
 
             // 2. Tạo ca làm việc hành chính chuẩn mẫu
@@ -64,6 +93,13 @@ namespace NfcAttendance.Api.Data
                     Status = "ACTIVE",
                     AssignedAt = DateTime.Now
                 });
+            }
+
+            // 4. Dọn dẹp các thẻ có UID rỗng nếu từng bị lưu lỗi
+            var invalidCards = context.NfcCards.Where(c => string.IsNullOrWhiteSpace(c.Uid)).ToList();
+            if (invalidCards.Any())
+            {
+                context.NfcCards.RemoveRange(invalidCards);
             }
 
             context.SaveChanges();

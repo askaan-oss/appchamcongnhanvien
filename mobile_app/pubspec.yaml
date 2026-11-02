@@ -1,0 +1,37 @@
+name: mobile_app
+description: "Hệ thống Chấm công NFC Kiosk Doanh nghiệp - Mobile App Dual-Mode"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.1.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  flutter_dotenv: ^5.1.0
+  dio: ^5.4.0
+  nfc_manager: ^3.3.0
+  mobile_scanner: ^5.1.1
+  sqflite: ^2.3.2
+  path: ^1.9.0
+  path_provider: ^2.1.2
+  audioplayers: ^6.0.0
+  connectivity_plus: ^6.0.3
+  shared_preferences: ^2.2.2
+  intl: ^0.19.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/
+    - assets/.env

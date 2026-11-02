@@ -53,7 +53,7 @@
   ```json
   {
     "username": "admin",
-    "password": "Admin@123"
+    "password": "123123"
   }
   ```
 - **Response (200 OK)**:
@@ -653,13 +653,13 @@ flowchart LR
    dotnet run
    ```
 2. **Truy cập Swagger**:
-   Mở trình duyệt: `http://localhost:5000/swagger` hoặc cổng HTTPS được cấu hình trong `launchSettings.json`.
+   Mở trình duyệt: `http://localhost:5013/swagger` hoặc cổng HTTPS được cấu hình trong `launchSettings.json`.
 3. **Đăng nhập lấy Token**:
    - Gọi `POST /api/v1/auth/login` với:
      ```json
      {
        "username": "admin",
-       "password": "Admin@123"
+       "password": "123123"
      }
      ```
    - Sao chép chuỗi `token` trong kết quả trả về.

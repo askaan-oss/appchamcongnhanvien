@@ -6,6 +6,18 @@ namespace NfcAttendance.Api.DTOs
     {
         public int EmployeeId { get; set; }
         public string Uid { get; set; } = string.Empty;
+        
+        // Hỗ trợ cả key 'cardUid' từ Mobile gửi lên
+        public string? CardUid 
+        { 
+            get => Uid; 
+            set 
+            { 
+                if (!string.IsNullOrWhiteSpace(value)) 
+                    Uid = value; 
+            } 
+        }
+
         public string CardType { get; set; } = "NTAG215";
     }
 
@@ -31,4 +43,3 @@ namespace NfcAttendance.Api.DTOs
         public string? CardStatus { get; set; }
     }
 }
-

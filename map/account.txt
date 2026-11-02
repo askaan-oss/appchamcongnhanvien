@@ -1,0 +1,17 @@
+# DANH SÁCH TÀI KHOẢN MẶC ĐỊNH HỆ THỐNG (ĐÃ ĐƯỢC TỰ ĐỘNG SEED VÀO DATABASE)
+
+1. TÀI KHOẢN QUẢN TRỊ VIÊN (ADMIN):
+- Tên đăng nhập : admin
+- Mật khẩu      : 123123
+- Phân quyền    : ADMIN (Toàn quyền quản lý ca, nhân sự, thẻ NFC, phê duyệt đơn và xuất báo cáo)
+
+2. TÀI KHOẢN PHÒNG NHÂN SỰ (HR):
+- Tên đăng nhập : hr
+- Mật khẩu      : 123123
+- Phân quyền    : HR (Quản lý hồ sơ, gán thẻ NFC, duyệt đơn nghỉ phép)
+
+--------------------------------------------------------------------------------
+* Cơ chế tự động:
+  Mã nguồn tại `NfcAttendance/Data/DbInitializer.cs` đã được cập nhật để tự động 
+  kiểm tra và khởi tạo/cập nhật mật khẩu chuẩn BCrypt cho 2 tài khoản trên 
+  mỗi khi khởi động Backend ASP.NET Core (`Program.cs`).

@@ -31,10 +31,10 @@ Frontend giao tiếp với Backend qua duy nhất một Base URL được cấu 
 
 ```env
 # URL API Backend ASP.NET Core (.NET 8)
-VITE_API_BASE_URL=http://localhost:5000/api/v1
+VITE_API_BASE_URL=http://localhost:5013/api/v1
 
 # URL SignalR WebSocket Hub để nhận sự kiện quẹt thẻ Realtime
-VITE_SIGNALR_HUB_URL=http://localhost:5000/hubs/attendance
+VITE_SIGNALR_HUB_URL=http://localhost:5013/hubs/attendance
 
 # Thời gian chờ tối đa cho các yêu cầu HTTP (milliseconds)
 VITE_API_TIMEOUT=15000
@@ -263,20 +263,20 @@ flowchart TD
 ---
 
 ### GIAI ĐOẠN 1: KHỞI TẠO MÔI TRƯỜNG & HẠ TẦNG KẾT NỐI (CORE INFRASTRUCTURE)
-- [ ] **1.1. Tạo dự án Vite + React**:
-  - Khởi tạo thư mục `frontend/` với lệnh `npm create vite@latest frontend -- --template react`.
+- [x] **1.1. Tạo dự án Vite + React**:
+  - Khởi tạo thư mục `frontend/` với cấu trúc React 18 + Vite.
   - Cài đặt các thư viện phụ thuộc cốt lõi:
     ```bash
     npm install react-router-dom axios @microsoft/signalr lucide-react clsx tailwind-merge qrcode.react recharts
     npm install -D tailwindcss postcss autoprefixer
     ```
   - Cấu hình file `tailwind.config.js` với dải màu thương hiệu chủ đạo (Primary Blue, Slate, Success Green, Danger Red).
-- [ ] **1.2. Cấu hình Biến môi trường (`.env`)**:
+- [x] **1.2. Cấu hình Biến môi trường (`.env`)**:
   - Tạo file `frontend/.env` và `frontend/.env.example` lưu `VITE_API_BASE_URL` và `VITE_SIGNALR_HUB_URL`.
-- [ ] **1.3. Xây dựng Tầng Dịch vụ Axios Client (`src/api/axiosClient.js`)**:
+- [x] **1.3. Xây dựng Tầng Dịch vụ Axios Client (`src/api/axiosClient.js`)**:
   - Cấu hình Request Interceptor: Tự động trích xuất `token` từ `localStorage` và đính kèm vào Header `Authorization: Bearer {token}`.
   - Cấu hình Response Interceptor: Bắt lỗi mã `401 Unauthorized`. Khi token hết hạn, tự động gọi API `POST /api/v1/auth/refresh` bằng `refreshToken` để lấy cặp token mới rồi thực hiện lại yêu cầu ban đầu mà người dùng không bị gián đoạn.
-- [ ] **1.4. Xây dựng State Toàn cục & Helpers**:
+- [x] **1.4. Xây dựng State Toàn cục & Helpers**:
   - Tạo `AuthContext.jsx` quản lý trạng thái đăng nhập, giải mã JWT, phân quyền tài khoản.
   - Tạo `formatters.js` (định dạng ngày giờ, định dạng số phút làm việc).
   - Tạo `fileDownloader.js` xử lý tải file nhị phân Blob về máy người dùng.
@@ -284,26 +284,26 @@ flowchart TD
 ---
 
 ### GIAI ĐOẠN 2: BỐ CỤC QUẢN TRỊ & XÁC THỰC NGƯỜI DÙNG (AUTH & LAYOUT)
-- [ ] **2.1. Màn hình Đăng nhập (`LoginPage.jsx`)**:
+- [x] **2.1. Màn hình Đăng nhập (`LoginPage.jsx`)**:
   - Thiết kế giao diện hiện đại, responsive trên cả máy tính lẫn máy tính bảng.
   - Xử lý xác thực form, gọi `POST /api/v1/auth/login`, lưu token và chuyển hướng trang.
-- [ ] **2.2. Khung Bố cục Quản trị (`AdminLayout.jsx`)**:
+- [x] **2.2. Khung Bố cục Quản trị (`AdminLayout.jsx`)**:
   - **Sidebar**: Danh sách menu có icon trực quan: *Tổng quan (Dashboard)*, *Nhân sự (Employees)*, *Ca làm việc (Shifts)*, *Lịch sử chấm công (Attendance)*, *Nghỉ phép (Leave Requests)*, *Báo cáo (Reports)*. Hỗ trợ thu gọn/mở rộng menu.
   - **Topbar**: Hiển thị tên tài khoản, vai trò (`ADMIN`/`HR`), avatar và menu dropdown Đăng xuất.
-- [ ] **2.3. Điều hướng & Bảo vệ Route (`ProtectedRoute.jsx`)**:
+- [x] **2.3. Điều hướng & Bảo vệ Route (`ProtectedRoute.jsx`)**:
   - Chặn các truy cập chưa đăng nhập và điều hướng về trang `/login`.
   - Kiểm tra vai trò người dùng trước khi vào các trang chỉ dành riêng cho `ADMIN` (ví dụ: tạo/xóa ca làm việc).
 
 ---
 
 ### GIAI ĐOẠN 3: DASHBOARD & GIÁM SÁT REALTIME SIGNALR (TODAY MONITOR)
-- [ ] **3.1. Thiết lập Kết nối SignalR (`SignalRContext.jsx`)**:
+- [x] **3.1. Thiết lập Kết nối SignalR (`SignalRContext.jsx`)**:
   - Khởi tạo kết nối tới endpoint `VITE_SIGNALR_HUB_URL` (`/hubs/attendance`) bằng thư viện `@microsoft/signalr`.
   - Cấu hình tự động kết nối lại (`withAutomaticReconnect`).
   - Lắng nghe sự kiện `ReceiveAttendanceEvent` và phân phối payload cho các component con.
-- [ ] **3.2. Hiển thị 4 Card KPI Tổng quan**:
+- [x] **3.2. Hiển thị 4 Card KPI Tổng quan**:
   - Gọi API `GET /api/v1/reports/summary` hiển thị số lượng: Tổng nhân viên, Đang làm việc, Đi trễ hôm nay, Nghỉ phép hôm nay.
-- [ ] **3.3. Bảng Realtime Today Monitor**:
+- [x] **3.3. Bảng Realtime Today Monitor**:
   - Nạp danh sách ban đầu từ `GET /api/v1/attendance/today`.
   - Khi có sự kiện quẹt thẻ từ SignalR: Tự động cập nhật hoặc chèn dòng mới vào bảng, hiển thị Badge màu theo trạng thái (Xanh lá: Đúng giờ, Đỏ: Đi trễ, Vàng: Về sớm, Tím: Tăng ca).
   - Phát âm thanh `notification.mp3` thông báo cho nhân viên lễ tân/HR.
@@ -311,17 +311,17 @@ flowchart TD
 ---
 
 ### GIAI ĐOẠN 4: QUẢN LÝ NHÂN SỰ, GÁN THẺ NFC & CẤP MÃ QR (EMPLOYEES & IDENTIFIERS)
-- [ ] **4.1. Bảng Dữ liệu Nhân sự Phân trang & Tìm kiếm**:
+- [x] **4.1. Bảng Dữ liệu Nhân sự Phân trang & Tìm kiếm**:
   - Gọi API `GET /api/v1/employees` với debounce tìm kiếm từ khóa và lọc theo phòng ban.
   - Component phân trang `Pagination.jsx`.
-- [ ] **4.2. Thêm mới & Cập nhật Hồ sơ Nhân viên**:
+- [x] **4.2. Thêm mới & Cập nhật Hồ sơ Nhân viên**:
   - Modal Form thêm mới (`POST /api/v1/employees`) và chỉnh sửa (`PUT /api/v1/employees/{id}`).
   - Hộp thoại xác nhận vô hiệu hóa nhân viên (`DELETE /api/v1/employees/{id}`).
-- [ ] **4.3. Quản lý Thẻ NFC NTAG215 (`NfcAssignModal.jsx`)**:
+- [x] **4.3. Quản lý Thẻ NFC NTAG215 (`NfcAssignModal.jsx`)**:
   - Xem danh sách thẻ UID đang gán cho nhân viên.
   - Giao diện gán mã UID thẻ mới (`POST /api/v1/nfc/assign`).
   - Nút khóa thẻ khi nhân viên báo làm mất thẻ (`POST /api/v1/nfc/revoke`).
-- [ ] **4.4. Quản lý & In Ấn Mã QR (`QrCodeModal.jsx`)**:
+- [x] **4.4. Quản lý & In Ấn Mã QR (`QrCodeModal.jsx`)**:
   - Gọi `GET /api/v1/employees/{id}/qr` và render mã QR độ nét cao với thư viện `qrcode.react`.
   - Nút bấm *"Cấp lại mã QR mới"* (`POST /api/v1/employees/{id}/qr`).
   - Nút bấm *"Tải ảnh QR (PNG)"* và *"In thẻ nhân viên"*.
@@ -329,21 +329,21 @@ flowchart TD
 ---
 
 ### GIAI ĐOẠN 5: QUẢN LÝ CA LÀM VIỆC & PHÂN CA TUẦN (SHIFTS & ROSTER)
-- [ ] **5.1. Danh mục Ca làm việc (`ShiftsPage.jsx`)**:
+- [x] **5.1. Danh mục Ca làm việc (`ShiftsPage.jsx`)**:
   - Gọi API `GET /api/v1/shifts`.
   - Form thêm/sửa ca: Tên ca, Giờ bắt đầu, Giờ kết thúc, Giờ nghỉ trưa, Số phút ân hạn đi trễ (`GraceMinutes`).
   - Xóa ca làm việc (`DELETE /api/v1/shifts/{id}`).
-- [ ] **5.2. Phân ca theo tuần (`ShiftAssignModal.jsx`)**:
+- [x] **5.2. Phân ca theo tuần (`ShiftAssignModal.jsx`)**:
   - Giao diện chọn nhân viên, chọn ca làm việc, chọn các thứ trong tuần (Thứ Hai $\rightarrow$ Chủ Nhật).
   - Chọn ngày bắt đầu và kết thúc hiệu lực, gọi API `POST /api/v1/shifts/assign`.
 
 ---
 
 ### GIAI ĐOẠN 6: LỊCH SỬ CHẤM CÔNG & ĐIỀU CHỈNH CÔNG THỦ CÔNG (ATTENDANCE HISTORY)
-- [ ] **6.1. Bảng Tra cứu Lịch sử Chấm công**:
+- [x] **6.1. Bảng Tra cứu Lịch sử Chấm công**:
   - Bộ lọc khoảng ngày (`fromDate`, `toDate`), phòng ban, nhân viên.
   - Gọi API `GET /api/v1/attendance/history` hiển thị chi tiết lịch sử quẹt thẻ.
-- [ ] **6.2. Modal Điều chỉnh công thủ công (`ManualAttendanceModal.jsx`)**:
+- [x] **6.2. Modal Điều chỉnh công thủ công (`ManualAttendanceModal.jsx`)**:
   - Dành cho trường hợp nhân viên quên thẻ hoặc gặp sự cố kỹ thuật.
   - Form chọn nhân viên, ngày công, nhập giờ vào thực tế, giờ ra thực tế và trạng thái (`COMPLETED`).
   - Gọi API `POST /api/v1/attendance/manual` và tải lại bảng lịch sử.
@@ -351,26 +351,26 @@ flowchart TD
 ---
 
 ### GIAI ĐOẠN 7: QUẢN LÝ & PHÊ DUYỆT ĐƠN NGHỈ PHÉP (LEAVE REQUESTS WORKFLOW)
-- [ ] **7.1. Giao diện Danh sách Đơn nghỉ phép**:
+- [x] **7.1. Giao diện Danh sách Đơn nghỉ phép**:
   - Lấy dữ liệu từ `GET /api/v1/leave-requests`.
   - Hệ thống 3 Tab trạng thái: *Chờ duyệt*, *Đã duyệt*, *Từ chối*.
-- [ ] **7.2. Gửi Đơn nghỉ phép mới**:
+- [x] **7.2. Gửi Đơn nghỉ phép mới**:
   - Form chọn nhân viên, chọn loại nghỉ (Phép năm, Nghỉ ốm, Việc riêng), chọn khoảng ngày, nhập lý do.
   - Gọi API `POST /api/v1/leave-requests`.
-- [ ] **7.3. Phê duyệt & Từ chối Đơn nghỉ phép**:
+- [x] **7.3. Phê duyệt & Từ chối Đơn nghỉ phép**:
   - Modal phê duyệt cho HR/Admin, nhập ghi chú xét duyệt.
   - Gọi API `PATCH /api/v1/leave-requests/{id}/status`.
 
 ---
 
 ### GIAI ĐOẠN 8: BÁO CÁO THỐNG KÊ, TẢI FILE EXCEL/PDF & ĐÓNG GÓI PRODUCTION
-- [ ] **8.1. Biểu đồ Dashboard Thống kê**:
+- [x] **8.1. Biểu đồ Dashboard Thống kê**:
   - Sử dụng thư viện `recharts` biểu diễn biểu đồ tỷ lệ chuyên cần theo các ngày trong tuần/tháng.
-- [ ] **8.2. Chức năng Tải Bảng công Excel & PDF**:
+- [x] **8.2. Chức năng Tải Bảng công Excel & PDF**:
   - Bộ chọn Tháng/Năm xuất báo cáo.
   - Tải file Excel nhị phân từ `GET /api/v1/reports/export/excel?month=&year=` thông qua `fileDownloader.js`.
   - Tải file PDF tổng hợp từ `GET /api/v1/reports/export/pdf?month=&year=`.
-- [ ] **8.3. Kiểm thử Tích hợp & Đóng gói Production**:
+- [x] **8.3. Kiểm thử Tích hợp & Đóng gói Production**:
   - Kiểm thử toàn diện tất cả 29 APIs Backend từ giao diện Web.
   - Kiểm thử kết nối Realtime SignalR khi Kiosk quẹt thẻ.
   - Viết `Dockerfile` và kịch bản `nginx.conf` phục vụ triển khai Frontend.
