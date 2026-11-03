@@ -1,7 +1,7 @@
 import axiosClient from './axiosClient'
 
 export const reportApi = {
-  getSummary: (date) => axiosClient.get('/reports/summary', { params: date ? { date } : {} }),
+  getSummary: (params) => axiosClient.get('/reports/summary', { params: typeof params === 'string' ? { date: params } : params }),
   exportExcel: (month, year) =>
     axiosClient.get('/reports/export/excel', {
       params: { month, year },

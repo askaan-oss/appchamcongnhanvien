@@ -35,9 +35,10 @@ export function DashboardPage() {
 
   const loadData = useCallback(async () => {
     try {
+      const todayStr = new Date().toLocaleDateString('en-CA') // Định dạng YYYY-MM-DD theo giờ địa phương
       const [sumRes, attRes] = await Promise.all([
-        reportApi.getSummary(),
-        attendanceApi.getToday(),
+        reportApi.getSummary({ date: todayStr }),
+        attendanceApi.getToday({ date: todayStr }),
       ])
 
       const sumData = sumRes.data?.data || sumRes.data || {}
@@ -49,7 +50,30 @@ export function DashboardPage() {
       })
 
       const attData = attRes.data?.data || attRes.data || []
-      setTodayAttendance(Array.isArray(attData) ? attData : [])
+      const serverRecords = Array.isArray(attData) ? attData : []
+
+      // Hợp nhất (merge) thông minh giữa serverRecords và dữ liệu realtime cục bộ
+      setTodayAttendance((prev) => {
+        if (serverRecords.length === 0 && prev.length > 0) {
+          // Tránh ghi đè mảng rỗng nếu local đã có bản ghi realtime vừa quẹt
+          return prev
+        }
+
+        const merged = [...serverRecords]
+        // Bổ sung các bản ghi realtime gần nhất chưa kịp có trên server
+        prev.forEach((localItem) => {
+          const exists = merged.some(
+            (m) =>
+              (localItem.id && m.id && String(m.id) === String(localItem.id)) ||
+              (localItem.employeeCode && m.employeeCode && m.employeeCode.toLowerCase() === localItem.employeeCode.toLowerCase()) ||
+              (localItem.employeeId && m.employeeId && m.employeeId === localItem.employeeId)
+          )
+          if (!exists) {
+            merged.push(localItem)
+          }
+        })
+        return merged
+      })
     } catch (err) {
       console.error('Failed to load dashboard data:', err)
     } finally {
@@ -66,33 +90,44 @@ export function DashboardPage() {
   useEffect(() => {
     const unsubscribe = subscribeAttendance((eventData) => {
       console.log('Realtime push received in Dashboard:', eventData)
-      if (eventData.success === false || eventData.isSuccess === false) {
+      if (!eventData || eventData.success === false || eventData.isSuccess === false) {
         return
       }
 
+      // 1. Tự động tải lại dữ liệu chuẩn từ server sau 800ms để đảm bảo database đã hoàn tất lưu
+      setTimeout(() => {
+        loadData()
+      }, 800)
+
+      // 2. Cập nhật state tức thời (optimistic update) để phản hồi ngay trên giao diện
       setTodayAttendance((prev) => {
+        const empCode = eventData.employeeCode
+        const empId = eventData.employeeId
         const existingIndex = prev.findIndex(
-          (item) => item.employeeId === eventData.employeeId || item.id === eventData.id
+          (item) =>
+            (empCode && item.employeeCode?.toString().toLowerCase() === empCode.toString().toLowerCase()) ||
+            (empId && (item.employeeId === empId || item.id === empId)) ||
+            (eventData.id && item.id === eventData.id)
         )
 
         let updated = [...prev]
         const incomingRecord = {
-          id: eventData.id || `realtime-${Date.now()}`,
-          employeeId: eventData.employeeId,
-          employeeCode: eventData.employeeCode,
-          fullName: eventData.fullName || eventData.employeeName,
-          employeeName: eventData.employeeName || eventData.fullName,
-          department: eventData.department,
-          shiftName: eventData.shiftName || 'Ca Hành Chính',
-          shiftTime: eventData.shiftTime,
-          checkIn: eventData.checkInTime || eventData.checkIn,
-          checkInTime: eventData.checkInTime || eventData.checkIn,
-          checkOut: eventData.checkOutTime || eventData.checkOut,
-          checkOutTime: eventData.checkOutTime || eventData.checkOut,
-          lateMinutes: eventData.lateMinutes || 0,
-          totalWorkingMinutes: eventData.totalWorkingMinutes || (eventData.totalWorkHours ? eventData.totalWorkHours * 60 : 0),
-          totalWorkHours: eventData.totalWorkHours,
-          status: eventData.status,
+          id: eventData.id || (existingIndex >= 0 ? updated[existingIndex].id : `realtime-${Date.now()}`),
+          employeeId: empId || (existingIndex >= 0 ? updated[existingIndex].employeeId : undefined),
+          employeeCode: empCode || (existingIndex >= 0 ? updated[existingIndex].employeeCode : ''),
+          fullName: eventData.fullName || eventData.employeeName || (existingIndex >= 0 ? updated[existingIndex].fullName : 'Nhân viên'),
+          employeeName: eventData.employeeName || eventData.fullName || (existingIndex >= 0 ? updated[existingIndex].employeeName : 'Nhân viên'),
+          department: eventData.department || (existingIndex >= 0 ? updated[existingIndex].department : '-'),
+          shiftName: eventData.shiftName || (existingIndex >= 0 ? updated[existingIndex].shiftName : 'Ca Hành Chính'),
+          shiftTime: eventData.shiftTime || (existingIndex >= 0 ? updated[existingIndex].shiftTime : ''),
+          checkIn: eventData.checkInTime || eventData.checkIn || (existingIndex >= 0 ? updated[existingIndex].checkIn : null),
+          checkInTime: eventData.checkInTime || eventData.checkIn || (existingIndex >= 0 ? updated[existingIndex].checkIn : null),
+          checkOut: eventData.checkOutTime || eventData.checkOut || (existingIndex >= 0 ? updated[existingIndex].checkOut : null),
+          checkOutTime: eventData.checkOutTime || eventData.checkOut || (existingIndex >= 0 ? updated[existingIndex].checkOut : null),
+          lateMinutes: eventData.lateMinutes ?? (existingIndex >= 0 ? updated[existingIndex].lateMinutes : 0),
+          overtimeMinutes: eventData.overtimeMinutes ?? (existingIndex >= 0 ? updated[existingIndex].overtimeMinutes : 0),
+          totalWorkingMinutes: eventData.totalWorkingMinutes || (existingIndex >= 0 ? updated[existingIndex].totalWorkingMinutes : 0),
+          status: eventData.status || (existingIndex >= 0 ? updated[existingIndex].status : 'PRESENT'),
           method: eventData.method || eventData.checkInMethod || 'NFC',
           isManual: false,
         }
@@ -106,22 +141,31 @@ export function DashboardPage() {
           updated = [incomingRecord, ...updated]
         }
 
-        setHighlightedId(incomingRecord.id)
-        setTimeout(() => setHighlightedId(null), 2500)
+        const highlightTarget = empCode || incomingRecord.id
+        setHighlightedId(highlightTarget)
+        setTimeout(() => setHighlightedId(null), 3000)
 
         return updated
       })
 
-      // Update KPI counters
+      // Cập nhật thẻ thống kê
       setSummary((prev) => ({
         ...prev,
-        attendedToday: prev.attendedToday + (eventData.isCheckOut ? 0 : 1),
-        lateToday: prev.lateToday + (eventData.lateMinutes > 0 ? 1 : 0),
+        attendedToday: (prev.attendedToday || 0) + (eventData.isCheckOut ? 0 : 1),
+        lateToday: (prev.lateToday || 0) + (eventData.lateMinutes > 0 ? 1 : 0),
       }))
     })
 
     return () => unsubscribe()
-  }, [subscribeAttendance])
+  }, [subscribeAttendance, loadData])
+
+  // Cơ chế Polling dự phòng (Mỗi 10s tự refresh ngầm tránh trường hợp Somee ngắt kết nối WebSocket)
+  useEffect(() => {
+    const pollTimer = setInterval(() => {
+      loadData()
+    }, 10000)
+    return () => clearInterval(pollTimer)
+  }, [loadData])
 
   const handleManualRefresh = () => {
     setIsRefreshing(true)
@@ -318,7 +362,7 @@ export function DashboardPage() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {todayAttendance.map((row) => {
-                  const isHighlighted = row.id === highlightedId
+                  const isHighlighted = row.id === highlightedId || (row.employeeCode && row.employeeCode === highlightedId)
                   const empCode = row.employeeCode || '-'
                   const empName = row.fullName || row.employeeName || 'Nhân viên'
                   const dept = row.department || '-'

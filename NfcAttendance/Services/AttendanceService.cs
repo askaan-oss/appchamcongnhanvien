@@ -39,7 +39,8 @@ namespace NfcAttendance.Api.Services
 
         private async Task<TapAttendanceResponseDto> ProcessTapInternalAsync(TapAttendanceRequestDto request, string? forcedAction)
         {
-            DateTime scanTime = request.Timestamp ?? DateTime.Now;
+            // Sử dụng giờ Việt Nam (UTC+7) để đảm bảo đồng bộ khi backend deploy lên Somee hoặc các cloud server nước ngoài
+            DateTime scanTime = request.Timestamp ?? DateTime.UtcNow.AddHours(7);
             DateTime today = scanTime.Date;
 
             // 1. Tìm nhân viên thông qua Thẻ NFC UID hoặc Mã QR
@@ -175,6 +176,7 @@ namespace NfcAttendance.Api.Services
                 {
                     Success = true,
                     Action = "CHECK_IN",
+                    EmployeeId = employee.Id,
                     EmployeeCode = employee.EmployeeCode,
                     FullName = employee.FullName,
                     Department = employee.Department ?? "Chưa gán",
@@ -182,6 +184,8 @@ namespace NfcAttendance.Api.Services
                     ShiftTime = $"{shift.StartTime:hh\\:mm} - {shift.EndTime:hh\\:mm}",
                     AvatarUrl = employee.AvatarUrl,
                     Timestamp = scanTime,
+                    CheckInTime = scanTime.ToString("HH:mm:ss"),
+                    LateMinutes = lateMinutes,
                     Status = status,
                     Message = message
                 };
@@ -237,6 +241,7 @@ namespace NfcAttendance.Api.Services
                 {
                     Success = true,
                     Action = "CHECK_OUT",
+                    EmployeeId = employee.Id,
                     EmployeeCode = employee.EmployeeCode,
                     FullName = employee.FullName,
                     Department = employee.Department ?? "Chưa gán",
@@ -244,6 +249,12 @@ namespace NfcAttendance.Api.Services
                     ShiftTime = $"{shift.StartTime:hh\\:mm} - {shift.EndTime:hh\\:mm}",
                     AvatarUrl = employee.AvatarUrl,
                     Timestamp = scanTime,
+                    CheckInTime = attendance.CheckIn.ToString("HH:mm:ss"),
+                    CheckOutTime = scanTime.ToString("HH:mm:ss"),
+                    LateMinutes = attendance.LateMinutes,
+                    EarlyMinutes = earlyMinutes,
+                    OvertimeMinutes = overtimeMinutes,
+                    TotalWorkingMinutes = totalMinutes,
                     Status = earlyMinutes > 0 ? "EARLY" : (overtimeMinutes > 0 ? "OVERTIME" : "COMPLETED"),
                     Message = $"Check-out thành công (Tổng làm việc: {totalMinutes / 60}h{totalMinutes % 60}p)"
                 };
@@ -255,9 +266,9 @@ namespace NfcAttendance.Api.Services
             return response;
         }
 
-        public async Task<List<AttendanceHistoryDto>> GetTodayAttendanceAsync()
+        public async Task<List<AttendanceHistoryDto>> GetTodayAttendanceAsync(DateTime? specificDate = null)
         {
-            var today = DateTime.Today;
+            var today = specificDate ?? DateTime.UtcNow.AddHours(7).Date;
             var list = await _context.Attendances
                 .Include(a => a.Employee)
                     .ThenInclude(e => e.EmployeeShifts)
@@ -428,6 +439,28 @@ namespace NfcAttendance.Api.Services
             }
 
             await _context.SaveChangesAsync();
+
+            // Phát thông báo SignalR để Web Admin tự động cập nhật Dashboard & Lịch sử chấm công
+            try
+            {
+                await _hubContext.Clients.All.SendAsync("ReceiveAttendanceEvent", new TapAttendanceResponseDto
+                {
+                    Success = true,
+                    Action = "MANUAL_ADJUST",
+                    EmployeeId = employee.Id,
+                    EmployeeCode = employee.EmployeeCode,
+                    FullName = employee.FullName,
+                    Department = employee.Department ?? "Chưa gán",
+                    Timestamp = dto.CheckIn,
+                    Status = dto.Status,
+                    Message = $"Đã cập nhật công thủ công cho {employee.FullName}"
+                });
+            }
+            catch
+            {
+                // Bỏ qua lỗi SignalR nếu không có client kết nối
+            }
+
             return (true, $"Đã cập nhật công thủ công cho nhân viên {employee.FullName} ngày {recordDate:dd/MM/yyyy}.");
         }
 

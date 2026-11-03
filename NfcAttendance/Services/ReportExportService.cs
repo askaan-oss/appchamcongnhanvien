@@ -19,9 +19,9 @@ namespace NfcAttendance.Api.Services
             _context = context;
         }
 
-        public async Task<DashboardSummaryDto> GetDashboardSummaryAsync()
+        public async Task<DashboardSummaryDto> GetDashboardSummaryAsync(DateTime? specificDate = null)
         {
-            var today = DateTime.Today;
+            var today = specificDate ?? DateTime.UtcNow.AddHours(7).Date;
 
             var totalEmployees = await _context.Employees.CountAsync(e => e.Status == "ACTIVE");
 

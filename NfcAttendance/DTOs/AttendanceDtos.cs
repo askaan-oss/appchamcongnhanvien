@@ -17,6 +17,7 @@ namespace NfcAttendance.Api.DTOs
         public bool Success { get; set; }
         public string Action { get; set; } = string.Empty; // CHECK_IN hoặc CHECK_OUT
         public bool IsCheckOut => Action == "CHECK_OUT";
+        public int EmployeeId { get; set; }
         public string EmployeeCode { get; set; } = string.Empty;
         public string FullName { get; set; } = string.Empty;
         public string Department { get; set; } = string.Empty;
@@ -26,6 +27,12 @@ namespace NfcAttendance.Api.DTOs
         public DateTime Timestamp { get; set; }
         public string Status { get; set; } = string.Empty; // ON_TIME, LATE, EARLY, OVERTIME, COMPLETED
         public string Message { get; set; } = string.Empty;
+        public string CheckInTime { get; set; } = string.Empty;
+        public string? CheckOutTime { get; set; }
+        public int LateMinutes { get; set; }
+        public int EarlyMinutes { get; set; }
+        public int OvertimeMinutes { get; set; }
+        public int TotalWorkingMinutes { get; set; }
     }
 
     public class SyncOfflineRequestDto

@@ -9,10 +9,12 @@ import {
   QrCode,
   SlidersHorizontal,
   FileSpreadsheet,
+  RefreshCw,
 } from 'lucide-react'
 import attendanceApi from '../../api/attendanceApi'
 import employeeApi from '../../api/employeeApi'
 import useDebounce from '../../hooks/useDebounce'
+import useSignalR from '../../hooks/useSignalR'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
 import Select from '../../components/common/Select'
@@ -21,21 +23,18 @@ import Spinner from '../../components/common/Spinner'
 import Pagination from '../../components/common/Pagination'
 import ManualAttendanceModal from '../../components/modals/ManualAttendanceModal'
 import { ATTENDANCE_STATUS, METHOD_LABELS } from '../../utils/constants'
-import { formatTime, formatDate, formatDurationHours } from '../../utils/formatters'
+import { formatTime, formatDate, formatDurationHours, getLocalDateString } from '../../utils/formatters'
 
 export function AttendanceHistoryPage() {
+  const { subscribeAttendance } = useSignalR()
   const [history, setHistory] = useState([])
   const [pageIndex, setPageIndex] = useState(1)
   const [pageSize, setPageSize] = useState(15)
   const [totalCount, setTotalCount] = useState(0)
 
-  // Filters
-  const [fromDate, setFromDate] = useState(() => {
-    const d = new Date()
-    d.setDate(d.getDate() - 7)
-    return d.toISOString().split('T')[0]
-  })
-  const [toDate, setToDate] = useState(() => new Date().toISOString().split('T')[0])
+  // Filters - Sử dụng getLocalDateString để tránh lệch ngày do múi giờ UTC
+  const [fromDate, setFromDate] = useState(() => getLocalDateString(new Date(), -7))
+  const [toDate, setToDate] = useState(() => getLocalDateString(new Date(), 0))
   const [department, setDepartment] = useState('')
   const [employeeId, setEmployeeId] = useState('')
   const [employees, setEmployees] = useState([])
@@ -84,6 +83,25 @@ export function AttendanceHistoryPage() {
     loadHistory()
   }, [loadHistory])
 
+  // Lắng nghe sự kiện SignalR để tự động cập nhật ngay khi có quẹt thẻ / bù công
+  useEffect(() => {
+    const unsubscribe = subscribeAttendance((eventData) => {
+      console.log('Realtime push received in AttendanceHistoryPage:', eventData)
+      if (eventData && eventData.success !== false && eventData.isSuccess !== false) {
+        loadHistory()
+      }
+    })
+    return () => unsubscribe()
+  }, [subscribeAttendance, loadHistory])
+
+  // Tự động làm mới ngầm mỗi 15 giây
+  useEffect(() => {
+    const timer = setInterval(() => {
+      loadHistory()
+    }, 15000)
+    return () => clearInterval(timer)
+  }, [loadHistory])
+
   const openManualModal = (record = null) => {
     setSelectedRecord(record)
     setManualModalOpen(true)
@@ -100,13 +118,23 @@ export function AttendanceHistoryPage() {
           </p>
         </div>
 
-        <Button
-          variant="warning"
-          icon={CalendarClock}
-          onClick={() => openManualModal(null)}
-        >
-          Bù / Điều Chỉnh Công
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            icon={RefreshCw}
+            loading={isLoading}
+            onClick={loadHistory}
+          >
+            Làm mới
+          </Button>
+          <Button
+            variant="warning"
+            icon={CalendarClock}
+            onClick={() => openManualModal(null)}
+          >
+            Bù / Điều Chỉnh Công
+          </Button>
+        </div>
       </div>
 
       {/* Filter Toolbar */}

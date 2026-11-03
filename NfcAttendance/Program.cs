@@ -102,28 +102,36 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// 7. Tự động kiểm tra và tạo Database + Seed Data khi khởi động
-using (var scope = app.Services.CreateScope())
+// 7. Tự động kiểm tra và tạo Database + Seed Data khi khởi động (An toàn cho hosting Somee)
+try
 {
-    var context = scope.ServiceProvider.GetRequiredService<NfcAttendanceDbContext>();
-    DbInitializer.Initialize(context);
+    using (var scope = app.Services.CreateScope())
+    {
+        var context = scope.ServiceProvider.GetRequiredService<NfcAttendanceDbContext>();
+        DbInitializer.Initialize(context);
+    }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"[DB INITIALIZATION ERROR ON SOMEE]: {ex.Message}");
 }
 
 // 8. Cấu hình Middleware Pipeline
 app.UseCors("AllowAll");
 app.UseMiddleware<ErrorHandlingMiddleware>();
 
-if (app.Environment.IsDevelopment())
+// Luôn bật Swagger (kể cả trên Production/Somee) và đặt làm trang chủ
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "NFC Attendance API v1");
-    });
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "NFC Attendance API v1");
+    c.RoutePrefix = string.Empty; // Đặt Swagger ngay tại trang chủ http://appnfccc.somee.com/
+});
+
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapGet("/ping", () => Results.Ok(new { status = "OK", message = "NFC Attendance Backend is running successfully!" }));
 app.MapControllers();
 // Endpoint cho kết nối SignalR
 app.MapHub<AttendanceHub>("/hubs/attendance");

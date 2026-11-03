@@ -6,6 +6,7 @@ import Select from '../common/Select'
 import shiftApi from '../../api/shiftApi'
 import employeeApi from '../../api/employeeApi'
 import { DAYS_OF_WEEK } from '../../utils/constants'
+import { getLocalDateString } from '../../utils/formatters'
 
 export function ShiftAssignModal({ isOpen, onClose, onSuccess, initialEmployeeId = null }) {
   const [employees, setEmployees] = useState([])
@@ -13,7 +14,7 @@ export function ShiftAssignModal({ isOpen, onClose, onSuccess, initialEmployeeId
   const [employeeId, setEmployeeId] = useState(initialEmployeeId || '')
   const [shiftId, setShiftId] = useState('')
   const [selectedDays, setSelectedDays] = useState([1, 2, 3, 4, 5]) // Monday - Friday by default
-  const [effectiveFrom, setEffectiveFrom] = useState(() => new Date().toISOString().split('T')[0])
+  const [effectiveFrom, setEffectiveFrom] = useState(() => getLocalDateString(new Date(), 0))
   const [effectiveTo, setEffectiveTo] = useState('')
   const [errors, setErrors] = useState({})
   const [isLoading, setIsLoading] = useState(false)

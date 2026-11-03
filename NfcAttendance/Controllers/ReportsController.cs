@@ -22,9 +22,14 @@ namespace NfcAttendance.Api.Controllers
         /// 25. Thống kê tổng quan Dashboard (Tổng NV, Đang làm, Đi trễ, Nghỉ phép)
         /// </summary>
         [HttpGet("summary")]
-        public async Task<IActionResult> GetSummary()
+        public async Task<IActionResult> GetSummary([FromQuery] string? date)
         {
-            var summary = await _reportService.GetDashboardSummaryAsync();
+            DateTime? targetDate = null;
+            if (!string.IsNullOrEmpty(date) && DateTime.TryParse(date, out var parsedDate))
+            {
+                targetDate = parsedDate.Date;
+            }
+            var summary = await _reportService.GetDashboardSummaryAsync(targetDate);
             return Ok(new { success = true, data = summary });
         }
 

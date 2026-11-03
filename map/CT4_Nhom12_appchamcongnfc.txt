@@ -1,0 +1,192 @@
+================================================================================
+BÁO CÁO TỔNG HỢP CÁC CHỨC NĂNG ĐÃ THỰC HIỆN TRONG HỆ THỐNG NFC ATTENDANCE
+================================================================================
+
+- Buổi học   : Chiều Thứ Tư (CT4)
+- Tên nhóm   : Nhóm 12 (Database: Nhom12_CT4)
+- Tên đồ án  : Hệ thống Điểm danh & Chấm công Nhân viên qua Thẻ NFC và Mã QR
+               (NFC Attendance Enterprise System) 
+- Ngôn ngữ & Công nghệ Backend: ASP.NET Core Web API (.NET 8), Entity Framework Core 8, 
+                                Microsoft SQL Server, SignalR WebSocket, JWT Bearer, BCrypt.
+
+================================================================================
+DANH SÁCH CHI TIẾT CÁC CHỨC NĂNG ĐÃ CÀI ĐẶT THỰC TẾ TRONG BACKEND (NfcAttendance)
+(Toàn bộ 100% chức năng dưới đây đều đã được viết code và kiểm thử trong source code)
+================================================================================
+
+--------------------------------------------------------------------------------
+1. PHÂN HỆ XÁC THỰC VÀ PHÂN QUYỀN (AuthController.cs & AuthService.cs)
+--------------------------------------------------------------------------------
+* Endpoint: POST /api/v1/auth/login
+  - Chức năng: Đăng nhập hệ thống cho Quản trị viên (ADMIN), Cán bộ nhân sự (HR) và Thiết bị máy trạm (KIOSK).
+  - Thuật toán: Xác thực mật khẩu đã băm một chiều bằng chuẩn BCrypt.Verify().
+  - Kết quả trả về: Cấp Access Token JWT thời hạn 8 giờ và Refresh Token thời hạn 7 ngày.
+
+* Endpoint: POST /api/v1/auth/refresh
+  - Chức năng: Cấp mới Access Token tự động khi token cũ hết hạn thông qua Refresh Token hợp lệ mà không bắt người dùng đăng nhập lại.
+
+* Endpoint: GET /api/v1/auth/me
+  - Chức năng: Lấy thông tin hồ sơ tài khoản hiện hành (Username, Role, Id) thông qua giải mã Claims trong JWT Bearer Token.
+
+--------------------------------------------------------------------------------
+2. PHÂN HỆ QUẢN LÝ NHÂN SỰ (EmployeesController.cs & EmployeeService.cs)
+--------------------------------------------------------------------------------
+* Endpoint: GET /api/v1/employees
+  - Chức năng: Lấy danh sách toàn bộ nhân viên.
+  - Bộ lọc hỗ trợ: Phân trang (PageIndex, PageSize), lọc theo Phòng ban (Department), tìm kiếm từ khóa theo Tên hoặc Mã nhân viên (SearchTerm).
+
+* Endpoint: GET /api/v1/employees/{id}
+  - Chức năng: Lấy chi tiết thông tin hồ sơ của 1 nhân viên theo Id (gồm thông tin cá nhân, ca đang gán, thẻ NFC).
+
+* Endpoint: POST /api/v1/employees
+  - Chức năng: Thêm mới hồ sơ nhân sự vào cơ sở dữ liệu.
+  - Tự động hóa: Tự động kiểm tra trùng lặp mã nhân viên; tự động sinh mã định danh QR Code duy nhất nếu không truyền vào.
+
+* Endpoint: PUT /api/v1/employees/{id}
+  - Chức năng: Chỉnh sửa thông tin nhân viên (Họ tên, phòng ban, số điện thoại, email, trạng thái).
+
+* Endpoint: DELETE /api/v1/employees/{id}
+  - Chức năng: Xóa mềm nhân viên (chuyển trạng thái Status sang "INACTIVE" để bảo toàn toàn vẹn lịch sử dữ liệu).
+
+* Endpoint: POST /api/v1/employees/{id}/qr
+  - Chức năng: Cấp phát mới hoặc làm mới mã QR Code điểm danh cho nhân viên.
+
+* Endpoint: GET /api/v1/employees/{id}/qr
+  - Chức năng: Lấy mã QR Code hiện tại của nhân viên để hiển thị hoặc in thẻ.
+
+--------------------------------------------------------------------------------
+3. PHÂN HỆ QUẢN LÝ THẺ NFC (NfcController.cs & NfcSecurityService.cs)
+--------------------------------------------------------------------------------
+* Endpoint: POST /api/v1/nfc/assign
+  - Chức năng: Gán thẻ NFC vật lý (chuẩn NTAG215) cho nhân viên thông qua mã UID phần cứng.
+  - Logic xử lý: Làm sạch chuỗi UID (bỏ ký tự dấu hai chấm, dấu gạch nối, chuẩn hóa chữ hoa). Kiểm tra thẻ đã gán cho ai chưa, vô hiệu hóa thẻ cũ của nhân viên và gán thẻ mới với trạng thái "ACTIVE".
+
+* Endpoint: POST /api/v1/nfc/revoke
+  - Chức năng: Khóa hoặc thu hồi thẻ NFC khi nhân viên báo mất thẻ, chuyển trạng thái thẻ sang "LOCKED".
+
+* Endpoint: POST /api/v1/nfc/verify
+  - Chức năng: Xác thực thẻ NFC. Kiểm tra thẻ có tồn tại trong hệ thống, có trạng thái "ACTIVE" và nhân viên sở hữu có đang làm việc hay không.
+
+--------------------------------------------------------------------------------
+4. PHÂN HỆ QUẢN LÝ CA LÀM VIỆC & PHÂN CA (ShiftsController.cs & ShiftService.cs)
+--------------------------------------------------------------------------------
+* Endpoint: GET /api/v1/shifts
+  - Chức năng: Lấy danh sách toàn bộ các ca làm việc đang kích hoạt (IsActive = true).
+
+* Endpoint: POST /api/v1/shifts
+  - Chức năng: Tạo mới ca làm việc (Tên ca, Giờ bắt đầu StartTime, Giờ kết thúc EndTime, Giờ bắt đầu nghỉ trưa BreakStart, Giờ kết thúc nghỉ trưa BreakEnd, Số phút ân hạn GraceMinutes).
+
+* Endpoint: PUT /api/v1/shifts/{id}
+  - Chức năng: Cập nhật cấu hình khung giờ của ca làm việc.
+
+* Endpoint: DELETE /api/v1/shifts/{id}
+  - Chức năng: Ngừng kích hoạt ca làm việc (IsActive = false).
+
+* Endpoint: POST /api/v1/shifts/assign
+  - Chức năng: Phân ca làm việc cho nhân viên theo từng thứ trong tuần (DayOfWeek từ 0 - 6, ngày bắt đầu hiệu lực EffectiveFrom, ngày hết hạn EffectiveTo).
+
+--------------------------------------------------------------------------------
+5. PHÂN HỆ CHẤM CÔNG & ĐỘNG CƠ TÍNH CÔNG (AttendanceController.cs & AttendanceService.cs)
+--------------------------------------------------------------------------------
+* Endpoint: POST /api/v1/attendance/tap (Chấm công thông minh một chạm)
+  - Chức năng: Tự động nhận diện Vào ca (Check-In) hoặc Ra ca (Check-Out) mà nhân viên không cần bấm nút trên Kiosk.
+  - Nhận diện linh hoạt: Quẹt bằng mã UID thẻ NFC hoặc quét mã QR Code.
+  - Thuật toán nhận diện ca:
+    1. Tìm ca riêng gán cho nhân viên vào thứ hôm nay.
+    2. Nếu không có, lấy ca gần nhất còn hiệu lực.
+    3. Nếu không có, lấy ca mặc định "Ca Hành Chính" (08:00 - 17:30).
+  - Thuật toán phân luồng Vào/Ra:
+    + Nếu hôm nay nhân viên chưa từng quẹt (attendance == null): Phân luồng CHECK-IN.
+    + Nếu hôm nay nhân viên đã có lượt quẹt trước đó: Phân luồng CHECK-OUT.
+  - Thuật toán kiểm soát khung ca nghiêm ngặt (Strict Shift Enforcement):
+    + Nếu nhân viên chưa Check-in buổi sáng nhưng đến sau khi ca làm việc đã kết thúc (ScanTime >= Shift.EndTime):
+      -> Hệ thống TỪ CHỐI chấm công (Success = false, Status = "SHIFT_ENDED").
+      -> Trả về thông báo: "Ca làm việc đã kết thúc. Bạn chưa Check-in nên không thể chấm công. Vui lòng liên hệ phòng Nhân sự để giải trình!"
+  - Thuật toán tính toán thời gian công tự động:
+    + Tính đi trễ (LateMinutes): So sánh giờ quẹt với (StartTime + GraceMinutes).
+    + Tính về sớm (EarlyMinutes): So sánh giờ quẹt với EndTime.
+    + Tính tăng ca (OvertimeMinutes): Lấy số phút sau EndTime khi Check-Out.
+    + Tính tổng giờ làm việc thực tế (TotalWorkingMinutes): Lấy (CheckOut - CheckIn) và TỰ ĐỘNG KHẤU TRỪ thời gian nghỉ trưa (BreakEnd - BreakStart).
+    + Lưu trạng thái chính xác: Lưu "OVERTIME" vào CSDL nếu có tăng ca, "EARLY" nếu về sớm, "COMPLETED" nếu hoàn thành đủ ca.
+
+* Endpoint: POST /api/v1/attendance/check-in
+  - Chức năng: Ép ghi nhận Vào ca (dành cho chế độ bấm nút Vào ca cưỡng bức trên Kiosk).
+
+* Endpoint: POST /api/v1/attendance/check-out
+  - Chức năng: Ép ghi nhận Tan ca (dành cho chế độ bấm nút Tan ca cưỡng bức trên Kiosk).
+
+* Endpoint: GET /api/v1/attendance/today
+  - Chức năng: Lấy toàn bộ danh sách điểm danh trong ngày hôm nay (Today Monitor) phục vụ màn hình giám sát Web và App HR.
+  - Tự động nhận diện trạng thái OVERTIME cho các bản ghi có số phút tăng ca > 0.
+
+* Endpoint: GET /api/v1/attendance/history
+  - Chức năng: Truy vấn lịch sử chấm công phục vụ tính lương.
+  - Bộ lọc hỗ trợ: Từ ngày (FromDate), đến ngày (ToDate), theo phòng ban, theo nhân viên, phân trang.
+
+* Endpoint: POST /api/v1/attendance/manual
+  - Chức năng: Điều chỉnh công thủ công (Bù công) cho nhân viên quên quẹt thẻ hoặc đi công tác.
+  - Ghi nhận phương thức: CheckInMethod = "MANUAL" để minh bạch vết kiểm toán.
+
+--------------------------------------------------------------------------------
+6. PHÂN HỆ ĐỒNG BỘ NGOẠI TUYẾN (Offline Sync trong AttendanceService.cs)
+--------------------------------------------------------------------------------
+* Endpoint: POST /api/v1/attendance/sync-offline
+  - Chức năng: Tiếp nhận gói dữ liệu chấm công gửi lên từ bộ nhớ đệm SQLite của Kiosk khi trạm bị mất mạng Internet và có mạng trở lại.
+  - Xử lý hàng loạt (Bulk Insert) an toàn: Kiểm tra từng bản ghi theo timestamp, kiểm tra trùng lặp và lưu trữ vào CSDL chính.
+
+--------------------------------------------------------------------------------
+7. PHÂN HỆ MẠNG THỜI GIAN THỰC SIGNALR (AttendanceHub.cs)
+--------------------------------------------------------------------------------
+* Hub Route: /hubs/attendance
+  - Chức năng: Cung cấp kết nối WebSocket liên tục giữa Backend và Web Admin.
+  - Sự kiện bắn realtime: "ReceiveAttendanceEvent"
+  - Cơ chế: Mỗi khi trạm Kiosk ghi nhận lượt quẹt thẻ thành công (hoặc bị từ chối), Backend tự động phát sóng (broadcast) sự kiện qua Hub. Web Admin tự động cập nhật bảng công và nhảy số đếm KPI ngay lập tức mà không cần F5.
+
+--------------------------------------------------------------------------------
+8. PHÂN HỆ QUẢN LÝ ĐƠN NGHỈ PHÉP (LeaveRequestsController.cs & LeaveRequestService.cs)
+--------------------------------------------------------------------------------
+* Endpoint: GET /api/v1/leave-requests
+  - Chức năng: Lấy danh sách đơn xin nghỉ phép, lọc theo trạng thái: "PENDING" (Chờ duyệt), "APPROVED" (Đã duyệt), "REJECTED" (Từ chối).
+
+* Endpoint: POST /api/v1/leave-requests
+  - Chức năng: Tạo mới đơn xin nghỉ phép (Loại phép: ANNUAL - Phép năm, SICK - Nghỉ ốm, UNPAID - Không lương; Ngày bắt đầu; Ngày kết thúc; Lý do).
+
+* Endpoint: PATCH /api/v1/leave-requests/{id}/status
+  - Chức năng: Cán bộ HR/Admin duyệt hoặc từ chối đơn nghỉ phép kèm ghi chú phản hồi. Tự động lưu Id người duyệt (ApproverId) và thời điểm duyệt.
+
+--------------------------------------------------------------------------------
+9. PHÂN HỆ BÁO CÁO & XUẤT FILE (ReportsController.cs & ReportExportService.cs)
+--------------------------------------------------------------------------------
+* Endpoint: GET /api/v1/reports/summary
+  - Chức năng: Thống kê số liệu Dashboard hôm nay: Tổng số nhân viên, số người đã đến làm, số người đi trễ, số người nghỉ phép.
+
+* Endpoint: GET /api/v1/reports/export/excel
+  - Chức năng: Xuất bảng tổng hợp chấm công theo tháng/năm ra file Excel chuẩn định dạng `.xlsx` (sử dụng thư viện ClosedXML).
+  - Nội dung file Excel: Mã NV, Họ tên, Phòng ban, Ca làm việc, Tổng ngày công làm việc, Số lần đi trễ, Tổng số phút trễ, Tổng số phút tăng ca, Số ngày nghỉ phép.
+
+* Endpoint: GET /api/v1/reports/export/pdf
+  - Chức năng: Xuất báo cáo chấm công tổng hợp theo tháng/năm ra file `.pdf` có định dạng bảng biểu báo cáo.
+
+--------------------------------------------------------------------------------
+10. PHÂN HỆ HỆ THỐNG & KHỞI TẠO TỰ ĐỘNG (DbInitializer.cs & ErrorHandlingMiddleware.cs)
+--------------------------------------------------------------------------------
+* DbInitializer.Initialize():
+  - Tự động kiểm tra và tạo cơ sở dữ liệu nếu chưa có.
+  - Tự động nạp sẵn tài khoản quản trị:
+    + admin (Mật khẩu: 123123 - Quyền: ADMIN)
+    + hr (Mật khẩu: 123123 - Quyền: HR)
+  - Tự động nạp ca mặc định: "Ca Hành Chính (08:00 - 17:30)".
+  - Tự động nạp danh sách nhân viên mẫu và thiết bị Kiosk trạm ban đầu.
+
+* ErrorHandlingMiddleware:
+  - Bắt toàn bộ lỗi Exception chưa được xử lý trong toàn bộ ứng dụng Backend.
+  - Đảm bảo server không bao giờ bị crash; trả về phản hồi chuẩn HTTP 500 kèm thông báo JSON thân thiện.
+
+================================================================================
+KẾT LUẬN
+================================================================================
+Hệ thống Backend (NfcAttendance) gồm đúng 7 Controllers, 7 Services, 1 Hub SignalR,
+9 Bảng dữ liệu quan hệ trên SQL Server và 27 Endpoints API RESTful chuẩn mực.
+Tất cả các chức năng nêu trên đều đã được cài đặt hoàn tất trong mã nguồn dự án.
+================================================================================
+

@@ -5,14 +5,15 @@ import Input from '../common/Input'
 import Select from '../common/Select'
 import leaveApi from '../../api/leaveApi'
 import employeeApi from '../../api/employeeApi'
+import { getLocalDateString } from '../../utils/formatters'
 
 export function LeaveRequestModal({ isOpen, onClose, onSuccess }) {
   const [employees, setEmployees] = useState([])
   const [formData, setFormData] = useState({
     employeeId: '',
     leaveType: 'ANNUAL',
-    fromDate: () => new Date().toISOString().split('T')[0],
-    toDate: () => new Date().toISOString().split('T')[0],
+    fromDate: getLocalDateString(new Date(), 0),
+    toDate: getLocalDateString(new Date(), 0),
     reason: '',
   })
   const [errors, setErrors] = useState({})
@@ -24,8 +25,8 @@ export function LeaveRequestModal({ isOpen, onClose, onSuccess }) {
       setFormData({
         employeeId: '',
         leaveType: 'ANNUAL',
-        fromDate: new Date().toISOString().split('T')[0],
-        toDate: new Date().toISOString().split('T')[0],
+        fromDate: getLocalDateString(new Date(), 0),
+        toDate: getLocalDateString(new Date(), 0),
         reason: '',
       })
       setErrors({})

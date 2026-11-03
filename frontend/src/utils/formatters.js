@@ -53,3 +53,18 @@ export function formatMinutes(minutes) {
   return `${minutes} phút`
 }
 
+/**
+ * Trả về chuỗi ngày YYYY-MM-DD theo đúng múi giờ địa phương của máy người dùng
+ * (Tránh lỗi toISOString() bị lệch sang hôm qua do múi giờ UTC)
+ */
+export function getLocalDateString(baseDate = new Date(), offsetDays = 0) {
+  const d = new Date(baseDate)
+  if (offsetDays !== 0) {
+    d.setDate(d.getDate() + offsetDays)
+  }
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+

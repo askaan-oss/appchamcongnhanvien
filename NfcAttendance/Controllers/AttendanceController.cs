@@ -63,9 +63,14 @@ namespace NfcAttendance.Api.Controllers
         /// 18. Giám sát dữ liệu hôm nay (Today Monitor)
         /// </summary>
         [HttpGet("today")]
-        public async Task<IActionResult> GetTodayAttendance()
+        public async Task<IActionResult> GetTodayAttendance([FromQuery] string? date)
         {
-            var list = await _attendanceService.GetTodayAttendanceAsync();
+            DateTime? targetDate = null;
+            if (!string.IsNullOrEmpty(date) && DateTime.TryParse(date, out var parsedDate))
+            {
+                targetDate = parsedDate.Date;
+            }
+            var list = await _attendanceService.GetTodayAttendanceAsync(targetDate);
             return Ok(new { success = true, data = list });
         }
 

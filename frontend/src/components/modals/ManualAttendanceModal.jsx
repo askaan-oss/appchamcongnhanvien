@@ -5,11 +5,12 @@ import Input from '../common/Input'
 import Select from '../common/Select'
 import attendanceApi from '../../api/attendanceApi'
 import employeeApi from '../../api/employeeApi'
+import { getLocalDateString } from '../../utils/formatters'
 
 export function ManualAttendanceModal({ isOpen, onClose, onSuccess, initialRecord = null }) {
   const [employees, setEmployees] = useState([])
   const [employeeId, setEmployeeId] = useState('')
-  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0])
+  const [date, setDate] = useState(() => getLocalDateString(new Date(), 0))
   const [checkInTime, setCheckInTime] = useState('08:00')
   const [checkOutTime, setCheckOutTime] = useState('17:30')
   const [status, setStatus] = useState('COMPLETED')
@@ -22,14 +23,14 @@ export function ManualAttendanceModal({ isOpen, onClose, onSuccess, initialRecor
       loadEmployees()
       if (initialRecord) {
         setEmployeeId(initialRecord.employeeId || '')
-        setDate(initialRecord.date ? initialRecord.date.split('T')[0] : new Date().toISOString().split('T')[0])
+        setDate(initialRecord.date ? initialRecord.date.split('T')[0] : getLocalDateString(new Date(), 0))
         setCheckInTime(initialRecord.checkInTime ? initialRecord.checkInTime.substring(11, 16) : '08:00')
         setCheckOutTime(initialRecord.checkOutTime ? initialRecord.checkOutTime.substring(11, 16) : '17:30')
         setStatus(initialRecord.status || 'COMPLETED')
         setNote(initialRecord.note || '')
       } else {
         setEmployeeId('')
-        setDate(new Date().toISOString().split('T')[0])
+        setDate(getLocalDateString(new Date(), 0))
         setCheckInTime('08:00')
         setCheckOutTime('17:30')
         setStatus('COMPLETED')
