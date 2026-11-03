@@ -141,6 +141,8 @@ namespace NfcAttendance.Api.Services
                     EmployeeCode = employee.EmployeeCode,
                     FullName = employee.FullName,
                     Department = employee.Department ?? "Chưa gán",
+                    ShiftName = shift.Name,
+                    ShiftTime = $"{shift.StartTime:hh\\:mm} - {shift.EndTime:hh\\:mm}",
                     AvatarUrl = employee.AvatarUrl,
                     Timestamp = scanTime,
                     Status = status,
@@ -200,6 +202,8 @@ namespace NfcAttendance.Api.Services
                     EmployeeCode = employee.EmployeeCode,
                     FullName = employee.FullName,
                     Department = employee.Department ?? "Chưa gán",
+                    ShiftName = shift.Name,
+                    ShiftTime = $"{shift.StartTime:hh\\:mm} - {shift.EndTime:hh\\:mm}",
                     AvatarUrl = employee.AvatarUrl,
                     Timestamp = scanTime,
                     Status = earlyMinutes > 0 ? "EARLY" : (overtimeMinutes > 0 ? "OVERTIME" : "COMPLETED"),
@@ -218,6 +222,7 @@ namespace NfcAttendance.Api.Services
             var today = DateTime.Today;
             return await _context.Attendances
                 .Include(a => a.Employee)
+                .Include(a => a.Shift)
                 .Where(a => a.Date == today)
                 .OrderByDescending(a => a.CheckIn)
                 .Select(a => new AttendanceHistoryDto
@@ -227,6 +232,8 @@ namespace NfcAttendance.Api.Services
                     EmployeeCode = a.Employee != null ? a.Employee.EmployeeCode : string.Empty,
                     FullName = a.Employee != null ? a.Employee.FullName : string.Empty,
                     Department = a.Employee != null ? (a.Employee.Department ?? string.Empty) : string.Empty,
+                    ShiftName = a.Shift != null ? a.Shift.Name : "Ca Hành Chính",
+                    ShiftTime = a.Shift != null ? $"{a.Shift.StartTime:hh\\:mm} - {a.Shift.EndTime:hh\\:mm}" : null,
                     Date = a.Date,
                     CheckIn = a.CheckIn.ToString("HH:mm:ss"),
                     CheckOut = a.CheckOut.HasValue ? a.CheckOut.Value.ToString("HH:mm:ss") : "--:--",
@@ -245,6 +252,7 @@ namespace NfcAttendance.Api.Services
         {
             var query = _context.Attendances
                 .Include(a => a.Employee)
+                .Include(a => a.Shift)
                 .AsQueryable();
 
             if (filter.FromDate.HasValue)
@@ -279,6 +287,8 @@ namespace NfcAttendance.Api.Services
                     EmployeeCode = a.Employee != null ? a.Employee.EmployeeCode : string.Empty,
                     FullName = a.Employee != null ? a.Employee.FullName : string.Empty,
                     Department = a.Employee != null ? (a.Employee.Department ?? string.Empty) : string.Empty,
+                    ShiftName = a.Shift != null ? a.Shift.Name : "Ca Hành Chính",
+                    ShiftTime = a.Shift != null ? $"{a.Shift.StartTime:hh\\:mm} - {a.Shift.EndTime:hh\\:mm}" : null,
                     Date = a.Date,
                     CheckIn = a.CheckIn.ToString("HH:mm:ss"),
                     CheckOut = a.CheckOut.HasValue ? a.CheckOut.Value.ToString("HH:mm:ss") : "--:--",

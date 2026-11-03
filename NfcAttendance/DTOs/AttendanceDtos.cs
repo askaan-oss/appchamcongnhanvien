@@ -20,6 +20,8 @@ namespace NfcAttendance.Api.DTOs
         public string EmployeeCode { get; set; } = string.Empty;
         public string FullName { get; set; } = string.Empty;
         public string Department { get; set; } = string.Empty;
+        public string ShiftName { get; set; } = string.Empty;
+        public string? ShiftTime { get; set; }
         public string? AvatarUrl { get; set; }
         public DateTime Timestamp { get; set; }
         public string Status { get; set; } = string.Empty; // ON_TIME, LATE, EARLY, OVERTIME, COMPLETED
@@ -64,6 +66,8 @@ namespace NfcAttendance.Api.DTOs
         public string FullName { get; set; } = string.Empty;
         public string EmployeeName => FullName;
         public string Department { get; set; } = string.Empty;
+        public string ShiftName { get; set; } = "Ca Hành Chính";
+        public string? ShiftTime { get; set; }
         public DateTime Date { get; set; }
         public string CheckIn { get; set; } = string.Empty;
         public string CheckInTime => CheckIn;

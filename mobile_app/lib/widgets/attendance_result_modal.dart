@@ -203,6 +203,29 @@ class _AttendanceResultModalState extends State<AttendanceResultModal> with Sing
                                   ],
                                 ),
                               ],
+                              if (res.shiftName != null && res.shiftName!.isNotEmpty) ...[
+                                const Divider(color: Colors.white10, height: 16),
+                                Row(
+                                  children: [
+                                    const Text('Ca làm việc:', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        res.shiftTime != null
+                                            ? '${res.shiftName!} (${res.shiftTime!})'
+                                            : res.shiftName!,
+                                        textAlign: TextAlign.end,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          color: Color(0xFF38BDF8),
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                               const Divider(color: Colors.white10, height: 16),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,

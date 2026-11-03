@@ -80,6 +80,8 @@ export function DashboardPage() {
           fullName: eventData.fullName || eventData.employeeName,
           employeeName: eventData.employeeName || eventData.fullName,
           department: eventData.department,
+          shiftName: eventData.shiftName || 'Ca Hành Chính',
+          shiftTime: eventData.shiftTime,
           checkIn: eventData.checkInTime || eventData.checkIn,
           checkInTime: eventData.checkInTime || eventData.checkIn,
           checkOut: eventData.checkOutTime || eventData.checkOut,
@@ -302,6 +304,7 @@ export function DashboardPage() {
                   <th className="py-3 px-4">Mã NV</th>
                   <th className="py-3 px-4">Tên Nhân Viên</th>
                   <th className="py-3 px-4">Phòng Ban</th>
+                  <th className="py-3 px-4">Ca Làm Việc</th>
                   <th className="py-3 px-4 text-center">Check-In</th>
                   <th className="py-3 px-4 text-center">Check-Out</th>
                   <th className="py-3 px-4 text-center">Tổng Giờ</th>
@@ -354,7 +357,17 @@ export function DashboardPage() {
                         {dept}
                       </td>
 
-                      {/* Cột 4: Check-In */}
+                      {/* Cột 4: Ca làm việc */}
+                      <td className="py-3.5 px-4 font-medium">
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-blue-700">{row.shiftName || 'Ca Hành Chính'}</span>
+                          {row.shiftTime && (
+                            <span className="text-[11px] font-mono text-slate-400">{row.shiftTime}</span>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Cột 5: Check-In */}
                       <td className="py-3.5 px-4 text-center font-mono">
                         {inTime && inTime !== '-' ? (
                           <span className="inline-block px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 font-bold border border-emerald-200">

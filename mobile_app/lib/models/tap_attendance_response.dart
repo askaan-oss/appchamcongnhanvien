@@ -3,6 +3,8 @@ class TapAttendanceResponse {
   final String? employeeCode;
   final String? employeeName;
   final String? department;
+  final String? shiftName;
+  final String? shiftTime;
   final DateTime? checkTime;
   final String? status;
   final int lateMinutes;
@@ -15,6 +17,8 @@ class TapAttendanceResponse {
     this.employeeCode,
     this.employeeName,
     this.department,
+    this.shiftName,
+    this.shiftTime,
     this.checkTime,
     this.status,
     this.lateMinutes = 0,
@@ -29,6 +33,8 @@ class TapAttendanceResponse {
       employeeCode: json['employeeCode'],
       employeeName: json['employeeName'] ?? json['fullName'],
       department: json['department'],
+      shiftName: json['shiftName'] ?? json['ShiftName'],
+      shiftTime: json['shiftTime'] ?? json['ShiftTime'],
       checkTime: json['checkTime'] != null 
           ? DateTime.tryParse(json['checkTime']) 
           : (json['timestamp'] != null ? DateTime.tryParse(json['timestamp']) : null),

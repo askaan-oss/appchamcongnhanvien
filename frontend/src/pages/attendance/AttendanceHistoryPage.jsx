@@ -181,6 +181,7 @@ export function AttendanceHistoryPage() {
                   <th className="py-3 px-4">Ngày Làm Việc</th>
                   <th className="py-3 px-4">Nhân viên</th>
                   <th className="py-3 px-4">Phòng ban</th>
+                  <th className="py-3 px-4">Ca Làm Việc</th>
                   <th className="py-3 px-4">Check-In</th>
                   <th className="py-3 px-4">Check-Out</th>
                   <th className="py-3 px-4 text-center">Trễ</th>
@@ -213,6 +214,15 @@ export function AttendanceHistoryPage() {
                       </td>
 
                       <td className="py-3.5 px-4 text-slate-600 font-medium">{row.department}</td>
+
+                      <td className="py-3.5 px-4 font-medium">
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-blue-700">{row.shiftName || 'Ca Hành Chính'}</span>
+                          {row.shiftTime && (
+                            <span className="text-[11px] font-mono text-slate-400">{row.shiftTime}</span>
+                          )}
+                        </div>
+                      </td>
 
                       <td className="py-3.5 px-4 font-mono font-semibold text-slate-800">
                         {row.checkInTime ? formatTime(row.checkInTime) : '-'}
