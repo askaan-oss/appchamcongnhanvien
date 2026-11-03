@@ -29,12 +29,14 @@ class TapAttendanceResponse {
       employeeCode: json['employeeCode'],
       employeeName: json['employeeName'] ?? json['fullName'],
       department: json['department'],
-      checkTime: json['checkTime'] != null ? DateTime.tryParse(json['checkTime']) : null,
+      checkTime: json['checkTime'] != null 
+          ? DateTime.tryParse(json['checkTime']) 
+          : (json['timestamp'] != null ? DateTime.tryParse(json['timestamp']) : null),
       status: json['status'],
       lateMinutes: json['lateMinutes'] ?? 0,
       method: json['method'],
       message: json['message'] ?? 'Thao tác thành công',
-      isCheckOut: json['isCheckOut'] ?? false,
+      isCheckOut: json['isCheckOut'] == true || (json['action'] ?? json['Action']) == 'CHECK_OUT',
     );
   }
 

@@ -26,6 +26,7 @@ class KioskHomeScreen extends StatefulWidget {
 class _KioskHomeScreenState extends State<KioskHomeScreen> {
   bool _isProcessing = false;
   TapAttendanceResponse? _activeResult;
+  String _attendanceMode = 'AUTO'; // 'AUTO', 'IN', 'OUT'
 
   @override
   void initState() {
@@ -89,7 +90,13 @@ class _KioskHomeScreenState extends State<KioskHomeScreen> {
         timestamp: now,
       );
 
-      result = await ApiService.instance.checkIn(request);
+      if (_attendanceMode == 'IN') {
+        result = await ApiService.instance.checkIn(request);
+      } else if (_attendanceMode == 'OUT') {
+        result = await ApiService.instance.checkOut(request);
+      } else {
+        result = await ApiService.instance.tapAttendance(request);
+      }
 
       if (!result.isSuccess && (result.message.contains('SocketException') || result.message.contains('Lỗi kết nối'))) {
         await _saveOffline(cardUid, qrPayload, method, now);
@@ -207,10 +214,68 @@ class _KioskHomeScreenState extends State<KioskHomeScreen> {
     super.dispose();
   }
 
+  Widget _buildModeChip(String mode, String label, IconData icon) {
+    final isSelected = _attendanceMode == mode;
+    Color activeColor = const Color(0xFF3B82F6);
+    if (mode == 'IN') activeColor = const Color(0xFF10B981);
+    if (mode == 'OUT') activeColor = const Color(0xFFF59E0B);
+
+    return InkWell(
+      onTap: () {
+        setState(() => _attendanceMode = mode);
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? activeColor.withAlpha(50) : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? activeColor : Colors.transparent,
+            width: 1.5,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 16,
+              color: isSelected ? activeColor : const Color(0xFF94A3B8),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : const Color(0xFF94A3B8),
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final animSize = (screenWidth * 0.52).clamp(160.0, 240.0);
+    final animSize = (screenWidth * 0.48).clamp(140.0, 220.0);
+
+    Color animColor = const Color(0xFF3B82F6);
+    String titleText = 'CHẠM THẺ NFC ĐỂ CHẤM CÔNG';
+    String subText = 'Hệ thống tự động ghi nhận Check-In / Check-Out';
+    if (_attendanceMode == 'IN') {
+      animColor = const Color(0xFF10B981);
+      titleText = 'CHẠM THẺ ĐỂ VÀO CA (CHECK-IN)';
+      subText = 'Chế độ cố định: Ghi nhận giờ vào ca làm việc';
+    } else if (_attendanceMode == 'OUT') {
+      animColor = const Color(0xFFF59E0B);
+      titleText = 'CHẠM THẺ ĐỂ RA CA (CHECK-OUT)';
+      subText = 'Chế độ cố định: Ghi nhận giờ tan ca ra về';
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A),
@@ -226,52 +291,73 @@ class _KioskHomeScreenState extends State<KioskHomeScreen> {
                 Expanded(
                   child: Center(
                     child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          NfcScanAnimation(
-                            size: animSize,
-                            color: const Color(0xFF3B82F6),
-                          ),
-
-                          const SizedBox(height: 24),
-
-                          const Text(
-                            'CHẠM THẺ NFC ĐỂ CHẤM CÔNG',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 1.5,
+                          // Thanh chuyển chế độ: Tự động / Check-In / Check-Out
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 16),
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1E293B),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: const Color(0xFF334155)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _buildModeChip('AUTO', 'Tự Động', Icons.auto_awesome),
+                                _buildModeChip('IN', 'Vào Ca', Icons.login),
+                                _buildModeChip('OUT', 'Ra Ca (Check-Out)', Icons.logout),
+                              ],
                             ),
                           ),
 
-                          const SizedBox(height: 8),
+                          NfcScanAnimation(
+                            size: animSize,
+                            color: animColor,
+                          ),
 
-                          const Text(
-                            'Hệ thống tự động ghi nhận Check-In / Check-Out trong 3 giây',
+                          const SizedBox(height: 20),
+
+                          Text(
+                            titleText,
                             textAlign: TextAlign.center,
-                            style: TextStyle(
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+
+                          const SizedBox(height: 6),
+
+                          Text(
+                            subText,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
                               color: Color(0xFF94A3B8),
                               fontSize: 13,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
 
-                          const SizedBox(height: 32),
+                          const SizedBox(height: 24),
 
                           OutlinedButton.icon(
                             onPressed: _isProcessing ? null : _handleQrScanner,
                             icon: const Icon(Icons.qr_code_scanner, size: 22),
-                            label: const Text(
-                              'QUÉT MÃ QR CÁ NHÂN',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1),
+                            label: Text(
+                              _attendanceMode == 'OUT'
+                                  ? 'QUÉT MÃ QR RA CA'
+                                  : (_attendanceMode == 'IN' ? 'QUÉT MÃ QR VÀO CA' : 'QUÉT MÃ QR CÁ NHÂN'),
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1),
                             ),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: Colors.white,
-                              side: const BorderSide(color: Colors.blueAccent, width: 2),
+                              side: BorderSide(color: animColor, width: 2),
                               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                             ),

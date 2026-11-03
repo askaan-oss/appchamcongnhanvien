@@ -16,6 +16,7 @@ namespace NfcAttendance.Api.DTOs
     {
         public bool Success { get; set; }
         public string Action { get; set; } = string.Empty; // CHECK_IN hoặc CHECK_OUT
+        public bool IsCheckOut => Action == "CHECK_OUT";
         public string EmployeeCode { get; set; } = string.Empty;
         public string FullName { get; set; } = string.Empty;
         public string Department { get; set; } = string.Empty;

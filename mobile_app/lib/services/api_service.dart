@@ -38,11 +38,49 @@ class ApiService {
     );
   }
 
-  // 1. Kiosk: Check-in via NFC UID or QR Payload
+  // 1. Kiosk: Smart Tap Attendance (Auto Detect Check-In / Check-Out)
+  Future<TapAttendanceResponse> tapAttendance(TapAttendanceRequest request) async {
+    try {
+      final response = await _dio.post(
+        '/attendance/tap',
+        data: request.toJson(),
+      );
+
+      final data = response.data is Map ? response.data : {};
+      final payload = data['data'] ?? data;
+      return TapAttendanceResponse.fromJson(payload);
+    } on DioException catch (e) {
+      final msg = e.response?.data?['message'] ?? e.message ?? 'Lỗi kết nối máy chủ';
+      return TapAttendanceResponse.error(msg);
+    } catch (e) {
+      return TapAttendanceResponse.error(e.toString());
+    }
+  }
+
+  // 1b. Kiosk: Forced Check-In
   Future<TapAttendanceResponse> checkIn(TapAttendanceRequest request) async {
     try {
       final response = await _dio.post(
         '/attendance/check-in',
+        data: request.toJson(),
+      );
+
+      final data = response.data is Map ? response.data : {};
+      final payload = data['data'] ?? data;
+      return TapAttendanceResponse.fromJson(payload);
+    } on DioException catch (e) {
+      final msg = e.response?.data?['message'] ?? e.message ?? 'Lỗi kết nối máy chủ';
+      return TapAttendanceResponse.error(msg);
+    } catch (e) {
+      return TapAttendanceResponse.error(e.toString());
+    }
+  }
+
+  // 1c. Kiosk: Forced Check-Out
+  Future<TapAttendanceResponse> checkOut(TapAttendanceRequest request) async {
+    try {
+      final response = await _dio.post(
+        '/attendance/check-out',
         data: request.toJson(),
       );
 
