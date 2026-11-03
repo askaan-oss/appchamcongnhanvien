@@ -181,58 +181,78 @@ export function ShiftsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {shifts.map((shift) => (
-                    <tr key={shift.id} className="hover:bg-slate-50/70 transition-colors">
-                      <td className="py-3.5 px-4 font-bold text-slate-900 text-sm">
-                        {shift.shiftName}
-                      </td>
+                  {shifts.map((shift) => {
+                    const isDefault = shift.isDefault || shift.shiftName?.includes('Hành Chính') || shift.name?.includes('Hành Chính')
+                    return (
+                      <tr key={shift.id} className="hover:bg-slate-50/70 transition-colors">
+                        <td className="py-3.5 px-4 font-bold text-slate-900 text-sm">
+                          <div className="flex items-center gap-2">
+                            <span>{shift.shiftName || shift.name}</span>
+                            {isDefault && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                <CheckCircle className="w-3 h-3 text-emerald-600" />
+                                Ca Mặc Định
+                              </span>
+                            )}
+                          </div>
+                        </td>
 
-                      <td className="py-3.5 px-4 font-mono font-semibold text-blue-600">
-                        {formatTime(shift.startTime)} &rarr; {formatTime(shift.endTime)}
-                      </td>
+                        <td className="py-3.5 px-4 font-mono font-semibold text-blue-600">
+                          {formatTime(shift.startTime)} &rarr; {formatTime(shift.endTime)}
+                        </td>
 
-                      <td className="py-3.5 px-4 font-mono text-slate-600">
-                        {shift.breakStartTime && shift.breakEndTime
-                          ? `${formatTime(shift.breakStartTime)} - ${formatTime(shift.breakEndTime)}`
-                          : '-'}
-                      </td>
+                        <td className="py-3.5 px-4 font-mono text-slate-600">
+                          {shift.breakStartTime && shift.breakEndTime
+                            ? `${formatTime(shift.breakStartTime)} - ${formatTime(shift.breakEndTime)}`
+                            : '-'}
+                        </td>
 
-                      <td className="py-3.5 px-4 text-center font-mono font-semibold text-slate-700">
-                        {shift.graceMinutes} phút
-                      </td>
+                        <td className="py-3.5 px-4 text-center font-mono font-semibold text-slate-700">
+                          {shift.graceMinutes} phút
+                        </td>
 
-                      <td className="py-3.5 px-4 text-center">
-                        <Badge variant={shift.isActive ? 'success' : 'default'} size="sm">
-                          {shift.isActive ? 'Đang kích hoạt' : 'Ngừng sử dụng'}
-                        </Badge>
-                      </td>
+                        <td className="py-3.5 px-4 text-center">
+                          <Badge variant={shift.isActive ? 'success' : 'default'} size="sm">
+                            {shift.isActive ? 'Đang kích hoạt' : 'Ngừng sử dụng'}
+                          </Badge>
+                        </td>
 
-                      <td className="py-3.5 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            onClick={() => {
-                              setEditingShift(shift)
-                              setFormModalOpen(true)
-                            }}
-                            className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-                            title="Sửa ca làm việc"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              setDeletingShift(shift)
-                              setDeleteModalOpen(true)
-                            }}
-                            className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                            title="Xóa ca làm việc"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                        <td className="py-3.5 px-4 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => {
+                                setEditingShift(shift)
+                                setFormModalOpen(true)
+                              }}
+                              className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                              title="Sửa ca làm việc"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                if (isDefault) {
+                                  alert('Không thể xóa ca mặc định của hệ thống!')
+                                  return
+                                }
+                                setDeletingShift(shift)
+                                setDeleteModalOpen(true)
+                              }}
+                              className={`p-1.5 rounded-lg border border-slate-200 transition-colors ${
+                                isDefault
+                                  ? 'text-slate-300 cursor-not-allowed bg-slate-50'
+                                  : 'text-slate-600 hover:text-rose-600 hover:bg-rose-50'
+                              }`}
+                              title={isDefault ? 'Không thể xóa ca mặc định' : 'Xóa ca làm việc'}
+                              disabled={isDefault}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
@@ -265,7 +285,9 @@ export function ShiftsPage() {
               <tbody className="divide-y divide-slate-100">
                 {employeesWithShifts.map((emp) => {
                   const assignment = emp.shiftAssignments?.[0] || emp.currentShiftAssignment
-                  const assignedShift = assignment?.shift || shifts.find(s => s.id === assignment?.shiftId)
+                  const defaultShift = shifts.find(s => s.isDefault || s.shiftName?.includes('Hành Chính') || s.name?.includes('Hành Chính')) || shifts[0]
+                  const assignedShift = assignment?.shift || shifts.find(s => s.id === assignment?.shiftId) || (assignment?.isDefault ? defaultShift : null)
+                  const isCustom = assignment && !assignment.isDefault
 
                   return (
                     <tr key={emp.id} className="hover:bg-slate-50/70 transition-colors">
@@ -274,18 +296,26 @@ export function ShiftsPage() {
                         <div className="font-mono text-[11px] text-slate-400">{emp.employeeCode}</div>
                       </td>
 
-                      <td className="py-3.5 px-4 text-slate-600 font-medium">{emp.department}</td>
+                      <td className="py-3.5 px-4 text-slate-600 font-medium">{emp.department || 'Chưa thiết lập'}</td>
 
                       <td className="py-3.5 px-4 font-semibold text-slate-800">
-                        {assignedShift ? (
+                        {isCustom ? (
                           <div className="flex items-center gap-1.5">
-                            <span className="text-blue-600">{assignedShift.shiftName}</span>
+                            <span className="text-blue-600 font-bold">{assignment.shiftName || assignedShift?.shiftName || assignedShift?.name}</span>
                             <span className="font-mono text-slate-400 text-[11px]">
-                              ({formatTime(assignedShift.startTime)}-{formatTime(assignedShift.endTime)})
+                              ({formatTime(assignment.startTime || assignedShift?.startTime)}-{formatTime(assignment.endTime || assignedShift?.endTime)})
                             </span>
                           </div>
                         ) : (
-                          <span className="text-slate-400 italic">Chưa phân ca</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-emerald-700 font-medium">Ca Hành Chính</span>
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              Mặc định
+                            </span>
+                            <span className="font-mono text-slate-400 text-[11px]">
+                              ({formatTime(defaultShift?.startTime || '08:00:00')}-{formatTime(defaultShift?.endTime || '17:30:00')})
+                            </span>
+                          </div>
                         )}
                       </td>
 
@@ -293,18 +323,18 @@ export function ShiftsPage() {
                         {assignment?.daysOfWeek ? (
                           formatDays(assignment.daysOfWeek)
                         ) : (
-                          <span className="text-slate-400">-</span>
+                          <span className="text-slate-600 font-medium">Thứ 2, Thứ 3, Thứ 4, Thứ 5, Thứ 6</span>
                         )}
                       </td>
 
                       <td className="py-3.5 px-4 text-slate-500 font-mono text-[11px]">
-                        {assignment?.effectiveFrom ? (
+                        {isCustom && assignment?.effectiveFrom ? (
                           <span>
                             {formatDate(assignment.effectiveFrom)} &rarr;{' '}
                             {assignment.effectiveTo ? formatDate(assignment.effectiveTo) : 'Vô hạn'}
                           </span>
                         ) : (
-                          '-'
+                          <span className="text-slate-400">Toàn thời gian</span>
                         )}
                       </td>
 
@@ -318,7 +348,7 @@ export function ShiftsPage() {
                             setAssignModalOpen(true)
                           }}
                         >
-                          Phân ca
+                          {isCustom ? 'Đổi ca' : 'Phân ca'}
                         </Button>
                       </td>
                     </tr>

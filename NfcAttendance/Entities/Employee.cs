@@ -19,6 +19,7 @@ namespace NfcAttendance.Api.Entities
 
         public virtual ICollection<NfcCard> NfcCards { get; set; } = new List<NfcCard>();
         public virtual ICollection<Attendance> Attendances { get; set; } = new List<Attendance>();
+        public virtual ICollection<EmployeeShift> EmployeeShifts { get; set; } = new List<EmployeeShift>();
     }
 }
 

@@ -22,6 +22,8 @@ namespace NfcAttendance.Api.Services
         {
             return await _context.Shifts
                 .Where(s => s.IsActive)
+                .OrderByDescending(s => s.Name.Contains("Hành Chính") || s.Name.ToLower().Contains("office"))
+                .ThenBy(s => s.Id)
                 .Select(s => new ShiftDto
                 {
                     Id = s.Id,
@@ -31,7 +33,8 @@ namespace NfcAttendance.Api.Services
                     BreakStart = s.BreakStart.ToString(@"hh\:mm\:ss"),
                     BreakEnd = s.BreakEnd.ToString(@"hh\:mm\:ss"),
                     GraceMinutes = s.GraceMinutes,
-                    IsActive = s.IsActive
+                    IsActive = s.IsActive,
+                    IsDefault = s.Name.Contains("Hành Chính") || s.Name.ToLower().Contains("office")
                 })
                 .ToListAsync();
         }
@@ -135,28 +138,78 @@ namespace NfcAttendance.Api.Services
                 return (false, "Ca làm việc không hợp lệ hoặc đã ngừng hoạt động!", null);
             }
 
-            var employeeShift = new EmployeeShift
+            // Thu thập danh sách các thứ trong tuần được chọn
+            var targetDays = new HashSet<byte>();
+            if (dto.SelectedDays != null && dto.SelectedDays.Count > 0)
             {
-                EmployeeId = dto.EmployeeId,
-                ShiftId = dto.ShiftId,
-                DayOfWeek = dto.DayOfWeek,
-                EffectiveFrom = dto.EffectiveFrom,
-                EffectiveTo = dto.EffectiveTo
-            };
+                foreach (var d in dto.SelectedDays)
+                {
+                    targetDays.Add((byte)d);
+                }
+            }
+            if (!string.IsNullOrWhiteSpace(dto.DaysOfWeek))
+            {
+                var parts = dto.DaysOfWeek.Split(new[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                foreach (var p in parts)
+                {
+                    if (byte.TryParse(p.Trim(), out var b))
+                    {
+                        targetDays.Add(b);
+                    }
+                }
+            }
+            if (dto.DayOfWeek.HasValue)
+            {
+                targetDays.Add(dto.DayOfWeek.Value);
+            }
 
-            _context.EmployeeShifts.Add(employeeShift);
+            // Nếu không có thứ nào được chỉ định, mặc định Thứ 2 -> Thứ 6 (1, 2, 3, 4, 5)
+            if (targetDays.Count == 0)
+            {
+                for (byte d = 1; d <= 5; d++) targetDays.Add(d);
+            }
+
+            // Xóa các phân ca trùng lặp trước đó của nhân viên này trên các ngày đã chọn để ghi đè cập nhật mới
+            var existingShifts = await _context.EmployeeShifts
+                .Where(es => es.EmployeeId == dto.EmployeeId && targetDays.Contains(es.DayOfWeek))
+                .ToListAsync();
+
+            if (existingShifts.Any())
+            {
+                _context.EmployeeShifts.RemoveRange(existingShifts);
+            }
+
+            // Thêm các bản ghi EmployeeShift mới cho từng ngày
+            var newAssignments = new List<EmployeeShift>();
+            foreach (var day in targetDays)
+            {
+                newAssignments.Add(new EmployeeShift
+                {
+                    EmployeeId = dto.EmployeeId,
+                    ShiftId = dto.ShiftId,
+                    DayOfWeek = day,
+                    EffectiveFrom = dto.EffectiveFrom,
+                    EffectiveTo = dto.EffectiveTo
+                });
+            }
+
+            await _context.EmployeeShifts.AddRangeAsync(newAssignments);
             await _context.SaveChangesAsync();
 
-            return (true, $"Phân ca '{shift.Name}' cho nhân viên '{employee.FullName}' thành công!", new EmployeeShiftResponseDto
+            var firstAssignment = newAssignments.First();
+            var daysStr = string.Join(",", targetDays.OrderBy(x => x));
+
+            return (true, $"Phân ca '{shift.Name}' cho nhân viên '{employee.FullName}' thành công ({targetDays.Count} ngày/tuần)!", new EmployeeShiftResponseDto
             {
-                Id = employeeShift.Id,
+                Id = firstAssignment.Id,
                 EmployeeId = employee.Id,
                 EmployeeName = employee.FullName,
                 ShiftId = shift.Id,
                 ShiftName = shift.Name,
-                DayOfWeek = employeeShift.DayOfWeek,
-                EffectiveFrom = employeeShift.EffectiveFrom,
-                EffectiveTo = employeeShift.EffectiveTo
+                DayOfWeek = firstAssignment.DayOfWeek,
+                DaysOfWeek = daysStr,
+                EffectiveFrom = firstAssignment.EffectiveFrom,
+                EffectiveTo = firstAssignment.EffectiveTo
             });
         }
     }

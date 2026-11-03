@@ -15,6 +15,7 @@ namespace NfcAttendance.Api.DTOs
         public string BreakEndTime => BreakEnd; // Hỗ trợ frontend đọc breakEndTime
         public int GraceMinutes { get; set; }
         public bool IsActive { get; set; }
+        public bool IsDefault { get; set; }
     }
 
     public class CreateShiftDto
@@ -80,7 +81,9 @@ namespace NfcAttendance.Api.DTOs
     {
         public int EmployeeId { get; set; }
         public int ShiftId { get; set; }
-        public byte DayOfWeek { get; set; } // 0: Sunday, 1: Monday, ...
+        public byte? DayOfWeek { get; set; } // Hỗ trợ gán 1 ngày đơn lẻ
+        public string? DaysOfWeek { get; set; } // Hỗ trợ dạng chuỗi "1,2,3,4,5"
+        public List<int>? SelectedDays { get; set; } // Hỗ trợ mảng [1,2,3,4,5]
         public DateTime EffectiveFrom { get; set; }
         public DateTime? EffectiveTo { get; set; }
     }
@@ -93,6 +96,7 @@ namespace NfcAttendance.Api.DTOs
         public int ShiftId { get; set; }
         public string ShiftName { get; set; } = string.Empty;
         public byte DayOfWeek { get; set; }
+        public string DaysOfWeek { get; set; } = string.Empty;
         public DateTime EffectiveFrom { get; set; }
         public DateTime? EffectiveTo { get; set; }
     }

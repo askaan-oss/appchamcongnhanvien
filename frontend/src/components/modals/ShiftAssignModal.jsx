@@ -36,12 +36,34 @@ export function ShiftAssignModal({ isOpen, onClose, onSuccess, initialEmployeeId
       setEmployees(empData)
       setShifts(sData)
       if (sData.length > 0 && !shiftId) {
-        setShiftId(sData[0].id)
+        const defaultShift = sData.find(s => s.isDefault || s.shiftName?.includes('Hành Chính') || s.name?.includes('Hành Chính')) || sData[0]
+        setShiftId(defaultShift.id)
       }
     } catch (err) {
       console.error('Failed to load employees or shifts', err)
     }
   }
+
+  // Khi chọn nhân viên, tự động điền cấu hình phân ca hiện tại của nhân viên đó nếu có
+  useEffect(() => {
+    if (employeeId && employees.length > 0) {
+      const selectedEmp = employees.find(e => e.id === Number(employeeId))
+      const currentAss = selectedEmp?.shiftAssignments?.[0] || selectedEmp?.currentShiftAssignment
+      if (currentAss && !currentAss.isDefault && currentAss.shiftId) {
+        setShiftId(currentAss.shiftId)
+        if (currentAss.daysOfWeek) {
+          const days = currentAss.daysOfWeek.split(',').map(Number).filter(n => !isNaN(n))
+          if (days.length > 0) setSelectedDays(days)
+        }
+        if (currentAss.effectiveFrom) {
+          setEffectiveFrom(currentAss.effectiveFrom.split('T')[0])
+        }
+        if (currentAss.effectiveTo) {
+          setEffectiveTo(currentAss.effectiveTo.split('T')[0])
+        }
+      }
+    }
+  }, [employeeId, employees])
 
   if (!isOpen) return null
 
@@ -73,6 +95,7 @@ export function ShiftAssignModal({ isOpen, onClose, onSuccess, initialEmployeeId
         employeeId: Number(employeeId),
         shiftId: Number(shiftId),
         daysOfWeek: selectedDays.join(','),
+        selectedDays: selectedDays,
         effectiveFrom: effectiveFrom,
         effectiveTo: effectiveTo || null,
       })
@@ -132,10 +155,13 @@ export function ShiftAssignModal({ isOpen, onClose, onSuccess, initialEmployeeId
               value={shiftId}
               onChange={(e) => setShiftId(e.target.value)}
               error={errors.shiftId}
-              options={shifts.map((s) => ({
-                value: s.id,
-                label: `${s.shiftName} (${s.startTime?.substring(0, 5)} - ${s.endTime?.substring(0, 5)})`,
-              }))}
+              options={shifts.map((s) => {
+                const isDefault = s.isDefault || s.shiftName?.includes('Hành Chính') || s.name?.includes('Hành Chính')
+                return {
+                  value: s.id,
+                  label: `${s.shiftName || s.name} (${(s.startTime || '').substring(0, 5)} - ${(s.endTime || '').substring(0, 5)})${isDefault ? ' [Mặc Định]' : ''}`,
+                }
+              })}
             />
 
             {/* Days of week picker */}

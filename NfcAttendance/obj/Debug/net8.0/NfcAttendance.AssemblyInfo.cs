@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("NfcAttendance")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0d8c9f4aa69c5ade3e32fecfce069fd4bb79a3f9")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+68b2a8a1ecb60a592c59b396d76436da79e5560a")]
 [assembly: System.Reflection.AssemblyProductAttribute("NfcAttendance")]
 [assembly: System.Reflection.AssemblyTitleAttribute("NfcAttendance")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

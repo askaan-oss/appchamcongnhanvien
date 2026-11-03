@@ -76,7 +76,9 @@ namespace NfcAttendance.Api.Services
                                            es.EffectiveFrom <= today &&
                                            (es.EffectiveTo == null || es.EffectiveTo >= today));
 
-            var shift = empShift?.Shift ?? await _context.Shifts.FirstOrDefaultAsync(s => s.IsActive);
+            var shift = empShift?.Shift 
+                ?? await _context.Shifts.FirstOrDefaultAsync(s => s.IsActive && s.Name.Contains("Hành Chính"))
+                ?? await _context.Shifts.FirstOrDefaultAsync(s => s.IsActive);
             if (shift == null)
             {
                 return new TapAttendanceResponseDto { Success = false, Message = "Chưa thiết lập ca làm việc trong hệ thống!" };

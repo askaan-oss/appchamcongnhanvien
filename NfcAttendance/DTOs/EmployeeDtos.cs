@@ -62,6 +62,22 @@ namespace NfcAttendance.Api.DTOs
         public DateTime CreatedAt { get; set; }
         public List<string> NfcCardUids { get; set; } = new List<string>();
         public List<NfcCardDetailDto> NfcCards => NfcCardUids.Select(u => new NfcCardDetailDto { CardUid = u }).ToList();
+
+        // Thông tin phân ca làm việc
+        public EmployeeShiftSummaryDto? CurrentShiftAssignment { get; set; }
+        public List<EmployeeShiftSummaryDto> ShiftAssignments { get; set; } = new List<EmployeeShiftSummaryDto>();
+    }
+
+    public class EmployeeShiftSummaryDto
+    {
+        public int ShiftId { get; set; }
+        public string ShiftName { get; set; } = string.Empty;
+        public string StartTime { get; set; } = string.Empty;
+        public string EndTime { get; set; } = string.Empty;
+        public string DaysOfWeek { get; set; } = string.Empty;
+        public DateTime? EffectiveFrom { get; set; }
+        public DateTime? EffectiveTo { get; set; }
+        public bool IsDefault { get; set; }
     }
 
     public class AssignQrDto

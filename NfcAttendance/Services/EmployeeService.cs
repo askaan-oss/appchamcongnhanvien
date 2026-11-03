@@ -20,7 +20,11 @@ namespace NfcAttendance.Api.Services
 
         public async Task<PagedResult<EmployeeResponseDto>> GetEmployeesAsync(EmployeeFilterDto filter)
         {
-            var query = _context.Employees.Include(e => e.NfcCards).AsQueryable();
+            var query = _context.Employees
+                .Include(e => e.NfcCards)
+                .Include(e => e.EmployeeShifts)
+                    .ThenInclude(es => es.Shift)
+                .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(filter.Department))
             {
@@ -41,11 +45,45 @@ namespace NfcAttendance.Api.Services
             var pageIndex = filter.PageIndex > 0 ? filter.PageIndex : 1;
             var pageSize = filter.PageSize > 0 ? filter.PageSize : 10;
 
-            var items = await query
+            var defaultShift = await _context.Shifts
+                .FirstOrDefaultAsync(s => s.IsActive && s.Name.Contains("Hành Chính"))
+                ?? await _context.Shifts.FirstOrDefaultAsync(s => s.IsActive);
+
+            var rawEmployees = await query
                 .OrderByDescending(e => e.CreatedAt)
                 .Skip((pageIndex - 1) * pageSize)
                 .Take(pageSize)
-                .Select(e => new EmployeeResponseDto
+                .ToListAsync();
+
+            var items = rawEmployees.Select(e =>
+            {
+                var assignments = e.EmployeeShifts
+                    .Where(es => es.Shift != null && es.Shift.IsActive)
+                    .GroupBy(es => es.ShiftId)
+                    .Select(g => new EmployeeShiftSummaryDto
+                    {
+                        ShiftId = g.Key,
+                        ShiftName = g.First().Shift?.Name ?? "",
+                        StartTime = g.First().Shift?.StartTime.ToString(@"hh\:mm\:ss") ?? "",
+                        EndTime = g.First().Shift?.EndTime.ToString(@"hh\:mm\:ss") ?? "",
+                        DaysOfWeek = string.Join(",", g.Select(x => x.DayOfWeek).OrderBy(x => x)),
+                        EffectiveFrom = g.Min(x => x.EffectiveFrom),
+                        EffectiveTo = g.Max(x => x.EffectiveTo),
+                        IsDefault = false
+                    })
+                    .ToList();
+
+                var currentShift = assignments.FirstOrDefault() ?? new EmployeeShiftSummaryDto
+                {
+                    ShiftId = defaultShift?.Id ?? 0,
+                    ShiftName = defaultShift?.Name ?? "Ca Hành Chính",
+                    StartTime = defaultShift?.StartTime.ToString(@"hh\:mm\:ss") ?? "08:00:00",
+                    EndTime = defaultShift?.EndTime.ToString(@"hh\:mm\:ss") ?? "17:30:00",
+                    DaysOfWeek = "1,2,3,4,5",
+                    IsDefault = true
+                };
+
+                return new EmployeeResponseDto
                 {
                     Id = e.Id,
                     EmployeeCode = e.EmployeeCode,
@@ -58,9 +96,11 @@ namespace NfcAttendance.Api.Services
                     QrCode = e.QrCode,
                     Status = e.Status,
                     CreatedAt = e.CreatedAt,
-                    NfcCardUids = e.NfcCards.Where(c => c.Status == "ACTIVE").Select(c => c.Uid).ToList()
-                })
-                .ToListAsync();
+                    NfcCardUids = e.NfcCards.Where(c => c.Status == "ACTIVE").Select(c => c.Uid).ToList(),
+                    ShiftAssignments = assignments,
+                    CurrentShiftAssignment = currentShift
+                };
+            }).ToList();
 
             return new PagedResult<EmployeeResponseDto>
             {
@@ -75,9 +115,41 @@ namespace NfcAttendance.Api.Services
         {
             var e = await _context.Employees
                 .Include(x => x.NfcCards)
+                .Include(x => x.EmployeeShifts)
+                    .ThenInclude(es => es.Shift)
                 .FirstOrDefaultAsync(x => x.Id == id);
 
             if (e == null) return null;
+
+            var defaultShift = await _context.Shifts
+                .FirstOrDefaultAsync(s => s.IsActive && s.Name.Contains("Hành Chính"))
+                ?? await _context.Shifts.FirstOrDefaultAsync(s => s.IsActive);
+
+            var assignments = e.EmployeeShifts
+                .Where(es => es.Shift != null && es.Shift.IsActive)
+                .GroupBy(es => es.ShiftId)
+                .Select(g => new EmployeeShiftSummaryDto
+                {
+                    ShiftId = g.Key,
+                    ShiftName = g.First().Shift?.Name ?? "",
+                    StartTime = g.First().Shift?.StartTime.ToString(@"hh\:mm\:ss") ?? "",
+                    EndTime = g.First().Shift?.EndTime.ToString(@"hh\:mm\:ss") ?? "",
+                    DaysOfWeek = string.Join(",", g.Select(x => x.DayOfWeek).OrderBy(x => x)),
+                    EffectiveFrom = g.Min(x => x.EffectiveFrom),
+                    EffectiveTo = g.Max(x => x.EffectiveTo),
+                    IsDefault = false
+                })
+                .ToList();
+
+            var currentShift = assignments.FirstOrDefault() ?? new EmployeeShiftSummaryDto
+            {
+                ShiftId = defaultShift?.Id ?? 0,
+                ShiftName = defaultShift?.Name ?? "Ca Hành Chính",
+                StartTime = defaultShift?.StartTime.ToString(@"hh\:mm\:ss") ?? "08:00:00",
+                EndTime = defaultShift?.EndTime.ToString(@"hh\:mm\:ss") ?? "17:30:00",
+                DaysOfWeek = "1,2,3,4,5",
+                IsDefault = true
+            };
 
             return new EmployeeResponseDto
             {
@@ -92,7 +164,9 @@ namespace NfcAttendance.Api.Services
                 QrCode = e.QrCode,
                 Status = e.Status,
                 CreatedAt = e.CreatedAt,
-                NfcCardUids = e.NfcCards.Where(c => c.Status == "ACTIVE").Select(c => c.Uid).ToList()
+                NfcCardUids = e.NfcCards.Where(c => c.Status == "ACTIVE").Select(c => c.Uid).ToList(),
+                ShiftAssignments = assignments,
+                CurrentShiftAssignment = currentShift
             };
         }
 
