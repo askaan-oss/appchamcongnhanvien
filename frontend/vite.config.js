@@ -7,6 +7,7 @@ export default defineConfig({
   server: {
     port: 3000,
     open: false,
+    allowedHosts: true,
     proxy: {
       '/api': {
         target: 'http://localhost:5013',
@@ -17,6 +18,10 @@ export default defineConfig({
         ws: true,
       }
     }
+  },
+  preview: {
+    port: 5173,
+    allowedHosts: true,
   },
   build: {
     rollupOptions: {

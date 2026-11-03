@@ -8,7 +8,8 @@ import {
   Sparkles,
   QrCode,
   CreditCard,
-  SlidersHorizontal,
+  Briefcase,
+  User,
 } from 'lucide-react'
 import { useSignalR } from '../../hooks/useSignalR'
 import attendanceApi from '../../api/attendanceApi'
@@ -67,7 +68,6 @@ export function DashboardPage() {
       console.log('Realtime push received in Dashboard:', eventData)
 
       setTodayAttendance((prev) => {
-        // Check if employee already has a record today
         const existingIndex = prev.findIndex(
           (item) => item.employeeId === eventData.employeeId || item.id === eventData.id
         )
@@ -77,29 +77,30 @@ export function DashboardPage() {
           id: eventData.id || `realtime-${Date.now()}`,
           employeeId: eventData.employeeId,
           employeeCode: eventData.employeeCode,
-          employeeName: eventData.employeeName,
+          fullName: eventData.fullName || eventData.employeeName,
+          employeeName: eventData.employeeName || eventData.fullName,
           department: eventData.department,
-          checkInTime: eventData.checkInTime,
-          checkOutTime: eventData.checkOutTime,
+          checkIn: eventData.checkInTime || eventData.checkIn,
+          checkInTime: eventData.checkInTime || eventData.checkIn,
+          checkOut: eventData.checkOutTime || eventData.checkOut,
+          checkOutTime: eventData.checkOutTime || eventData.checkOut,
           lateMinutes: eventData.lateMinutes || 0,
+          totalWorkingMinutes: eventData.totalWorkingMinutes || (eventData.totalWorkHours ? eventData.totalWorkHours * 60 : 0),
           totalWorkHours: eventData.totalWorkHours,
           status: eventData.status,
-          method: eventData.method,
+          method: eventData.method || eventData.checkInMethod || 'NFC',
           isManual: false,
         }
 
         if (existingIndex >= 0) {
-          // Update existing row
           updated[existingIndex] = {
             ...updated[existingIndex],
             ...incomingRecord,
           }
         } else {
-          // Prepend new row to the top
           updated = [incomingRecord, ...updated]
         }
 
-        // Highlight the updated/new item
         setHighlightedId(incomingRecord.id)
         setTimeout(() => setHighlightedId(null), 2500)
 
@@ -120,6 +121,58 @@ export function DashboardPage() {
   const handleManualRefresh = () => {
     setIsRefreshing(true)
     loadData()
+  }
+
+  // Helper tính toán tổng giờ làm việc thực tế từ Check-In và Check-Out
+  const calculateWorkHours = (row) => {
+    const inStr = row.checkIn || row.checkInTime
+    const outStr = row.checkOut || row.checkOutTime
+
+    const parseToMinutes = (str) => {
+      if (!str || str === '-' || str === '--:--') return null
+      if (str.includes('T') || str.includes(' ')) {
+        const d = new Date(str)
+        if (!isNaN(d.getTime())) return d.getHours() * 60 + d.getMinutes()
+      }
+      const parts = str.split(':')
+      if (parts.length >= 2) {
+        const h = parseInt(parts[0], 10)
+        const m = parseInt(parts[1], 10)
+        if (!isNaN(h) && !isNaN(m)) return h * 60 + m
+      }
+      return null
+    }
+
+    const inM = parseToMinutes(inStr)
+    const outM = parseToMinutes(outStr)
+
+    // Nếu đã có cả giờ Check-in và Check-out hợp lệ
+    if (inM !== null && outM !== null) {
+      let diff = outM >= inM ? (outM - inM) : (outM + 24 * 60 - inM)
+      // Nếu có nghỉ trưa hoặc totalWorkingMinutes từ server
+      if (row.totalWorkingMinutes && row.totalWorkingMinutes > 0) {
+        diff = row.totalWorkingMinutes
+      }
+      const h = Math.floor(diff / 60)
+      const m = diff % 60
+      const decimalHours = (diff / 60).toFixed(1)
+      return {
+        text: `${h}h ${m}p`,
+        subText: `(${decimalHours} giờ)`,
+        isWorking: false,
+      }
+    }
+
+    // Nếu chỉ mới Check-In mà chưa Check-Out
+    if (inM !== null) {
+      return {
+        text: 'Đang làm việc',
+        subText: null,
+        isWorking: true,
+      }
+    }
+
+    return { text: '-', subText: null, isWorking: false }
   }
 
   const todayStr = new Intl.DateTimeFormat('vi-VN', {
@@ -246,25 +299,34 @@ export function DashboardPage() {
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-slate-50 text-slate-500 font-semibold uppercase tracking-wider border-b border-slate-200">
-                  <th className="py-3 px-4">Nhân viên</th>
-                  <th className="py-3 px-4">Phòng ban</th>
-                  <th className="py-3 px-4">Check-In</th>
-                  <th className="py-3 px-4">Check-Out</th>
-                  <th className="py-3 px-4 text-center">Trễ</th>
-                  <th className="py-3 px-4 text-center">Tổng giờ</th>
-                  <th className="py-3 px-4 text-center">Phương thức</th>
-                  <th className="py-3 px-4 text-center">Trạng thái</th>
+                  <th className="py-3 px-4">Mã NV</th>
+                  <th className="py-3 px-4">Tên Nhân Viên</th>
+                  <th className="py-3 px-4">Phòng Ban</th>
+                  <th className="py-3 px-4 text-center">Check-In</th>
+                  <th className="py-3 px-4 text-center">Check-Out</th>
+                  <th className="py-3 px-4 text-center">Tổng Giờ</th>
+                  <th className="py-3 px-4 text-center">Đi Trễ</th>
+                  <th className="py-3 px-4 text-center">Phương Thức</th>
+                  <th className="py-3 px-4 text-center">Trạng Thái</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {todayAttendance.map((row) => {
                   const isHighlighted = row.id === highlightedId
+                  const empCode = row.employeeCode || '-'
+                  const empName = row.fullName || row.employeeName || 'Nhân viên'
+                  const dept = row.department || '-'
+                  const inTime = row.checkIn || row.checkInTime
+                  const outTime = row.checkOut || row.checkOutTime
+                  const workInfo = calculateWorkHours(row)
+
                   const statusConf = ATTENDANCE_STATUS[row.status] || {
                     label: row.status,
                     color: 'bg-slate-100 text-slate-800 border-slate-200',
                   }
-                  const methodConf = METHOD_LABELS[row.method] || {
-                    label: row.method || 'NFC',
+                  const methodStr = row.method || row.checkInMethod || 'NFC'
+                  const methodConf = METHOD_LABELS[methodStr] || {
+                    label: methodStr,
                     color: 'bg-slate-100 text-slate-600',
                   }
 
@@ -275,24 +337,68 @@ export function DashboardPage() {
                         isHighlighted ? 'bg-blue-100/60 animate-highlight' : ''
                       }`}
                     >
+                      {/* Cột 1: Mã NV */}
+                      <td className="py-3.5 px-4 font-mono font-bold text-blue-600">
+                        <span className="bg-blue-50 border border-blue-200/60 px-2 py-0.5 rounded text-xs">
+                          {empCode}
+                        </span>
+                      </td>
+
+                      {/* Cột 2: Tên nhân viên */}
                       <td className="py-3.5 px-4">
-                        <div className="font-bold text-slate-900 text-sm">{row.employeeName}</div>
-                        <div className="font-mono text-[11px] text-slate-400">{row.employeeCode}</div>
+                        <div className="font-bold text-slate-900 text-sm">{empName}</div>
                       </td>
 
-                      <td className="py-3.5 px-4 text-slate-600 font-medium">{row.department}</td>
-
-                      <td className="py-3.5 px-4 font-mono font-semibold text-slate-800">
-                        {row.checkInTime ? formatTime(row.checkInTime) : '-'}
+                      {/* Cột 3: Phòng ban */}
+                      <td className="py-3.5 px-4 text-slate-600 font-medium">
+                        {dept}
                       </td>
 
-                      <td className="py-3.5 px-4 font-mono text-slate-700">
-                        {row.checkOutTime ? formatTime(row.checkOutTime) : '-'}
+                      {/* Cột 4: Check-In */}
+                      <td className="py-3.5 px-4 text-center font-mono">
+                        {inTime && inTime !== '-' ? (
+                          <span className="inline-block px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 font-bold border border-emerald-200">
+                            {formatTime(inTime)}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400">-</span>
+                        )}
                       </td>
 
+                      {/* Cột 5: Check-Out */}
+                      <td className="py-3.5 px-4 text-center font-mono">
+                        {outTime && outTime !== '--:--' && outTime !== '-' ? (
+                          <span className="inline-block px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 font-bold border border-indigo-200">
+                            {formatTime(outTime)}
+                          </span>
+                        ) : (
+                          <span className="inline-block px-2.5 py-1 rounded-lg bg-slate-100 text-slate-400 font-medium">
+                            --:--
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Cột 6: Tổng giờ */}
+                      <td className="py-3.5 px-4 text-center font-mono">
+                        {workInfo.isWorking ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                            Đang làm việc
+                          </span>
+                        ) : (
+                          <div>
+                            <div className="font-bold text-slate-800 text-xs">{workInfo.text}</div>
+                            {workInfo.subText && (
+                              <div className="text-[10px] text-slate-400">{workInfo.subText}</div>
+                            )}
+                          </div>
+                        )}
+                      </td>
+
+                      {/* Cột 7: Đi trễ */}
                       <td className="py-3.5 px-4 text-center">
                         {row.lateMinutes > 0 ? (
-                          <span className="font-bold text-rose-600 font-mono">
+                          <span className="font-bold text-rose-600 font-mono bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
                             +{row.lateMinutes}p
                           </span>
                         ) : (
@@ -300,17 +406,12 @@ export function DashboardPage() {
                         )}
                       </td>
 
-                      <td className="py-3.5 px-4 text-center font-mono font-semibold text-slate-700">
-                        {row.totalWorkHours !== null && row.totalWorkHours !== undefined
-                          ? formatDurationHours(row.totalWorkHours)
-                          : '-'}
-                      </td>
-
+                      {/* Cột 8: Phương thức */}
                       <td className="py-3.5 px-4 text-center">
                         <span
                           className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold ${methodConf.color}`}
                         >
-                          {row.method === 'QR' ? (
+                          {methodStr === 'QR' ? (
                             <QrCode className="w-3 h-3" />
                           ) : (
                             <CreditCard className="w-3 h-3" />
@@ -319,6 +420,7 @@ export function DashboardPage() {
                         </span>
                       </td>
 
+                      {/* Cột 9: Trạng thái */}
                       <td className="py-3.5 px-4 text-center">
                         <span
                           className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold border ${statusConf.color}`}
@@ -339,4 +441,3 @@ export function DashboardPage() {
 }
 
 export default DashboardPage
-

@@ -26,9 +26,13 @@ export function LoginPage() {
       await login(username.trim(), password)
       navigate('/dashboard', { replace: true })
     } catch (err) {
-      setError(
-        err.response?.data?.message || 'Tên đăng nhập hoặc mật khẩu không chính xác'
-      )
+      if (!err.response) {
+        setError(`Lỗi kết nối máy chủ (${err.message || 'Network Error'}). Vui lòng kiểm tra lại backend tunnel!`)
+      } else {
+        setError(
+          err.response?.data?.message || 'Tên đăng nhập hoặc mật khẩu không chính xác'
+        )
+      }
     } finally {
       setIsLoading(false)
     }

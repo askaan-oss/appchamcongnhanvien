@@ -68,7 +68,9 @@ export function NfcAssignModal({ isOpen, onClose, onSuccess, employee }) {
     }
   }
 
-  const activeCards = employee.nfcCards || []
+  const activeCards = (employee.nfcCards && employee.nfcCards.length > 0)
+    ? employee.nfcCards
+    : (employee.nfcCardUids || []).map(uid => ({ cardUid: uid, uid, status: 'ACTIVE', cardType: 'NTAG215' }))
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-150">

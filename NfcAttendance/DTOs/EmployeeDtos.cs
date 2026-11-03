@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace NfcAttendance.Api.DTOs
 {
@@ -8,6 +9,11 @@ namespace NfcAttendance.Api.DTOs
         public string EmployeeCode { get; set; } = string.Empty;
         public string FullName { get; set; } = string.Empty;
         public string? Phone { get; set; }
+        public string? PhoneNumber 
+        { 
+            get => Phone; 
+            set { if (!string.IsNullOrEmpty(value)) Phone = value; } 
+        }
         public string? Email { get; set; }
         public string? Department { get; set; }
         public string? Position { get; set; }
@@ -19,12 +25,25 @@ namespace NfcAttendance.Api.DTOs
     {
         public string FullName { get; set; } = string.Empty;
         public string? Phone { get; set; }
+        public string? PhoneNumber 
+        { 
+            get => Phone; 
+            set { if (!string.IsNullOrEmpty(value)) Phone = value; } 
+        }
         public string? Email { get; set; }
         public string? Department { get; set; }
         public string? Position { get; set; }
         public string? AvatarUrl { get; set; }
         public string? QrCode { get; set; }
         public string Status { get; set; } = "ACTIVE";
+    }
+
+    public class NfcCardDetailDto
+    {
+        public string CardUid { get; set; } = string.Empty;
+        public string Uid => CardUid;
+        public string Status { get; set; } = "ACTIVE";
+        public string CardType { get; set; } = "NTAG215";
     }
 
     public class EmployeeResponseDto
@@ -33,6 +52,7 @@ namespace NfcAttendance.Api.DTOs
         public string EmployeeCode { get; set; } = string.Empty;
         public string FullName { get; set; } = string.Empty;
         public string? Phone { get; set; }
+        public string? PhoneNumber => Phone;
         public string? Email { get; set; }
         public string? Department { get; set; }
         public string? Position { get; set; }
@@ -41,6 +61,7 @@ namespace NfcAttendance.Api.DTOs
         public string Status { get; set; } = "ACTIVE";
         public DateTime CreatedAt { get; set; }
         public List<string> NfcCardUids { get; set; } = new List<string>();
+        public List<NfcCardDetailDto> NfcCards => NfcCardUids.Select(u => new NfcCardDetailDto { CardUid = u }).ToList();
     }
 
     public class AssignQrDto
@@ -48,21 +69,12 @@ namespace NfcAttendance.Api.DTOs
         public string? QrCode { get; set; } // Nếu để trống/null, hệ thống tự sinh mã QR bảo mật
     }
 
-    public class QrResponseDto
-    {
-        public int EmployeeId { get; set; }
-        public string EmployeeCode { get; set; } = string.Empty;
-        public string FullName { get; set; } = string.Empty;
-        public string QrCode { get; set; } = string.Empty;
-        public DateTime GeneratedAt { get; set; } = DateTime.Now;
-    }
-
     public class EmployeeFilterDto
     {
+        public string? Search { get; set; }
+        public string? Department { get; set; }
         public int PageIndex { get; set; } = 1;
         public int PageSize { get; set; } = 10;
-        public string? Department { get; set; }
-        public string? Search { get; set; }
     }
 
     public class PagedResult<T>
@@ -71,6 +83,6 @@ namespace NfcAttendance.Api.DTOs
         public int TotalCount { get; set; }
         public int PageIndex { get; set; }
         public int PageSize { get; set; }
-        public int TotalPages => (int)Math.Ceiling((double)TotalCount / (PageSize > 0 ? PageSize : 10));
+        public int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);
     }
 }

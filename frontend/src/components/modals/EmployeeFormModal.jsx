@@ -27,7 +27,7 @@ export function EmployeeFormModal({ isOpen, onClose, onSuccess, initialData = nu
         department: initialData.department || '',
         position: initialData.position || '',
         email: initialData.email || '',
-        phoneNumber: initialData.phoneNumber || '',
+        phoneNumber: initialData.phone || initialData.phoneNumber || '',
         status: initialData.status || 'ACTIVE',
       })
     } else {
@@ -70,10 +70,15 @@ export function EmployeeFormModal({ isOpen, onClose, onSuccess, initialData = nu
 
     setIsLoading(true)
     try {
+      const payload = {
+        ...formData,
+        phone: formData.phoneNumber?.trim() || undefined,
+        phoneNumber: formData.phoneNumber?.trim() || undefined,
+      }
       if (isEdit) {
-        await employeeApi.update(initialData.id, formData)
+        await employeeApi.update(initialData.id, payload)
       } else {
-        await employeeApi.create(formData)
+        await employeeApi.create(payload)
       }
       onSuccess?.()
       onClose()

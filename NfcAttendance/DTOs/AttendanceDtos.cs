@@ -61,16 +61,21 @@ namespace NfcAttendance.Api.DTOs
         public int EmployeeId { get; set; }
         public string EmployeeCode { get; set; } = string.Empty;
         public string FullName { get; set; } = string.Empty;
+        public string EmployeeName => FullName;
         public string Department { get; set; } = string.Empty;
         public DateTime Date { get; set; }
         public string CheckIn { get; set; } = string.Empty;
+        public string CheckInTime => CheckIn;
         public string CheckOut { get; set; } = string.Empty;
+        public string CheckOutTime => CheckOut;
         public int LateMinutes { get; set; }
         public int EarlyMinutes { get; set; }
         public int OvertimeMinutes { get; set; }
         public int TotalWorkingMinutes { get; set; }
+        public double TotalWorkHours => TotalWorkingMinutes > 0 ? Math.Round(TotalWorkingMinutes / 60.0, 1) : 0;
         public string Status { get; set; } = string.Empty;
         public string CheckInMethod { get; set; } = "NFC";
+        public string Method => CheckInMethod;
         public string? DeviceId { get; set; }
     }
 }

@@ -116,19 +116,24 @@ export function EmployeesPage() {
     setQrModalOpen(true)
   }
 
-  const openDeleteModal = (emp) => {
+  const openDeleteConfirm = (emp) => {
     setDeletingEmployee(emp)
     setDeleteModalOpen(true)
   }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200">
         <div>
-          <h1 className="text-2xl font-black text-slate-800 tracking-tight">Hồ Sơ Nhân Sự & Định Danh</h1>
+          <h1 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
+            <span>Danh Sách Nhân Viên</span>
+            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800">
+              {totalCount} hồ sơ
+            </span>
+          </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Quản lý thông tin nhân viên, cấp phát thẻ NFC NTAG215 và mã QR bảo mật cá nhân
+            Quản lý hồ sơ nhân sự, số điện thoại, gán mã thẻ NFC và mã QR chấm công Kiosk
           </p>
         </div>
 
@@ -137,11 +142,11 @@ export function EmployeesPage() {
         </Button>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="p-4 bg-white rounded-2xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row items-center gap-3">
-        <div className="w-full md:flex-1 relative">
+      {/* Filters Bar */}
+      <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex flex-col md:flex-row gap-3 items-center justify-between">
+        <div className="w-full md:w-80">
           <Input
-            placeholder="Tìm theo Mã NV, Họ tên, Email..."
+            placeholder="Tìm theo tên, mã NV, SĐT, Email..."
             icon={Search}
             value={search}
             onChange={(e) => {
@@ -186,8 +191,8 @@ export function EmployeesPage() {
                 <tr className="bg-slate-50 text-slate-500 font-semibold uppercase tracking-wider border-b border-slate-200">
                   <th className="py-3 px-4">Nhân viên</th>
                   <th className="py-3 px-4">Phòng ban & Chức vụ</th>
-                  <th className="py-3 px-4">Liên hệ</th>
-                  <th className="py-3 px-4 text-center">Thẻ NFC</th>
+                  <th className="py-3 px-4">Số Điện Thoại / Email</th>
+                  <th className="py-3 px-4 text-center">Thẻ NFC Đã Gán</th>
                   <th className="py-3 px-4 text-center">Trạng thái</th>
                   <th className="py-3 px-4 text-right">Thao tác</th>
                 </tr>
@@ -198,17 +203,27 @@ export function EmployeesPage() {
                     label: emp.status || 'ACTIVE',
                     color: 'bg-slate-100 text-slate-700 border-slate-200',
                   }
-                  const activeCardCount = (emp.nfcCards || []).filter(c => c.status === 'ACTIVE').length
+
+                  // Lấy số điện thoại (hỗ trợ cả phone và phoneNumber)
+                  const phoneNumber = emp.phone || emp.phoneNumber
+
+                  // Lấy danh sách thẻ NFC đã gán (hỗ trợ cả nfcCardUids và nfcCards)
+                  const activeCardUids = (emp.nfcCardUids && emp.nfcCardUids.length > 0)
+                    ? emp.nfcCardUids
+                    : (emp.nfcCards || []).map((c) => (typeof c === 'string' ? c : (c.cardUid || c.uid))).filter(Boolean)
+                  const activeCardCount = activeCardUids.length
 
                   return (
                     <tr key={emp.id} className="hover:bg-slate-50/70 transition-colors">
+                      {/* Cột 1: Nhân viên */}
                       <td className="py-3.5 px-4">
                         <div className="font-bold text-slate-900 text-sm">{emp.fullName}</div>
-                        <div className="font-mono text-[11px] text-blue-600 font-semibold">
+                        <div className="font-mono text-[11px] text-blue-600 font-semibold mt-0.5">
                           {emp.employeeCode}
                         </div>
                       </td>
 
+                      {/* Cột 2: Phòng ban & Chức vụ */}
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-1.5 text-slate-800 font-medium">
                           <Building className="w-3.5 h-3.5 text-slate-400" />
@@ -220,37 +235,56 @@ export function EmployeesPage() {
                         </div>
                       </td>
 
-                      <td className="py-3.5 px-4 text-slate-600">
+                      {/* Cột 3: Số Điện Thoại & Email */}
+                      <td className="py-3.5 px-4">
+                        {phoneNumber ? (
+                          <div className="flex items-center gap-1.5 text-slate-800 font-bold font-mono text-xs">
+                            <Phone className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                            <span>{phoneNumber}</span>
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 italic text-[11px]">Chưa có SĐT</span>
+                        )}
                         {emp.email && (
-                          <div className="flex items-center gap-1.5">
-                            <Mail className="w-3 h-3 text-slate-400" />
-                            <span>{emp.email}</span>
+                          <div className="flex items-center gap-1.5 mt-1 text-slate-500 text-[11px]">
+                            <Mail className="w-3 h-3 text-slate-400 shrink-0" />
+                            <span className="truncate max-w-[160px]">{emp.email}</span>
                           </div>
                         )}
-                        {emp.phoneNumber && (
-                          <div className="flex items-center gap-1.5 mt-0.5 text-slate-500">
-                            <Phone className="w-3 h-3 text-slate-400" />
-                            <span>{emp.phoneNumber}</span>
-                          </div>
-                        )}
-                        {!emp.email && !emp.phoneNumber && <span className="text-slate-400">-</span>}
                       </td>
 
+                      {/* Cột 4: Thẻ NFC Đã Gán */}
                       <td className="py-3.5 px-4 text-center">
                         <button
                           onClick={() => openNfcModal(emp)}
-                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
                             activeCardCount > 0
-                              ? 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100'
+                              ? 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100 shadow-xs'
                               : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200'
                           }`}
-                          title="Quản lý thẻ NFC"
+                          title={
+                            activeCardCount > 0
+                              ? `Mã thẻ: ${activeCardUids.join(', ')} - Nhấn để quản lý/thu hồi`
+                              : 'Nhấn để gán thẻ NFC'
+                          }
                         >
-                          <CreditCard className="w-3.5 h-3.5" />
-                          <span>{activeCardCount > 0 ? `${activeCardCount} thẻ` : 'Chưa gán'}</span>
+                          <CreditCard className="w-3.5 h-3.5 text-indigo-600" />
+                          {activeCardCount > 0 ? (
+                            <span className="font-mono font-bold tracking-wider">
+                              {activeCardUids[0]}
+                              {activeCardCount > 1 && (
+                                <span className="ml-1 text-[10px] bg-indigo-200 px-1 py-0.2 rounded text-indigo-900">
+                                  +{activeCardCount - 1}
+                                </span>
+                              )}
+                            </span>
+                          ) : (
+                            <span className="text-[11px]">Chưa gán</span>
+                          )}
                         </button>
                       </td>
 
+                      {/* Cột 5: Trạng thái */}
                       <td className="py-3.5 px-4 text-center">
                         <span
                           className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold border ${statusConf.color}`}
@@ -259,6 +293,7 @@ export function EmployeesPage() {
                         </span>
                       </td>
 
+                      {/* Cột 6: Thao tác */}
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           {/* QR Code button */}
@@ -281,9 +316,9 @@ export function EmployeesPage() {
 
                           {/* Delete button */}
                           <button
-                            onClick={() => openDeleteModal(emp)}
-                            className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                            title="Vô hiệu hóa"
+                            onClick={() => openDeleteConfirm(emp)}
+                            className="p-1.5 rounded-lg border border-slate-200 text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                            title="Xóa nhân viên"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -297,15 +332,20 @@ export function EmployeesPage() {
           </div>
         )}
 
-        <Pagination
-          pageIndex={pageIndex}
-          pageSize={pageSize}
-          totalCount={totalCount}
-          onPageChange={(newP) => setPageIndex(newP)}
-        />
+        {/* Pagination */}
+        {!isLoading && totalCount > pageSize && (
+          <div className="p-4 border-t border-slate-100 flex items-center justify-between">
+            <Pagination
+              currentPage={pageIndex}
+              pageSize={pageSize}
+              totalCount={totalCount}
+              onPageChange={setPageIndex}
+            />
+          </div>
+        )}
       </div>
 
-      {/* Modals */}
+      {/* Modal: Thêm / Sửa Nhân viên */}
       <EmployeeFormModal
         isOpen={formModalOpen}
         initialData={editingEmployee}
@@ -313,6 +353,7 @@ export function EmployeesPage() {
         onSuccess={loadEmployees}
       />
 
+      {/* Modal: Gán & Quản lý Thẻ NFC */}
       <NfcAssignModal
         isOpen={nfcModalOpen}
         employee={selectedForNfc}
@@ -320,25 +361,27 @@ export function EmployeesPage() {
         onSuccess={loadEmployees}
       />
 
+      {/* Modal: Xem & In Mã QR */}
       <QrCodeModal
         isOpen={qrModalOpen}
         employee={selectedForQr}
         onClose={() => setQrModalOpen(false)}
+        onSuccess={loadEmployees}
       />
 
+      {/* Modal: Xác nhận Xóa Nhân viên */}
       <ConfirmModal
         isOpen={deleteModalOpen}
-        title="Xác nhận vô hiệu hóa nhân viên"
-        message={`Bạn có chắc chắn muốn vô hiệu hóa nhân viên ${deletingEmployee?.fullName} (${deletingEmployee?.employeeCode})? Tài khoản và các phương thức chấm công liên quan sẽ tạm dừng.`}
-        confirmText="Vô hiệu hóa"
-        variant="danger"
+        title="Xác nhận xóa nhân viên"
+        message={`Bạn có chắc chắn muốn xóa hồ sơ nhân viên "${deletingEmployee?.fullName}" (${deletingEmployee?.employeeCode})? Toàn bộ lịch sử chấm công và thẻ NFC liên kết cũng sẽ bị ảnh hưởng.`}
+        confirmText="Xác nhận xóa"
+        confirmVariant="danger"
         isLoading={isDeleting}
-        onConfirm={handleDelete}
         onClose={() => setDeleteModalOpen(false)}
+        onConfirm={handleDelete}
       />
     </div>
   )
 }
 
 export default EmployeesPage
-

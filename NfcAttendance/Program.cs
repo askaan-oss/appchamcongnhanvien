@@ -110,6 +110,7 @@ using (var scope = app.Services.CreateScope())
 }
 
 // 8. Cấu hình Middleware Pipeline
+app.UseCors("AllowAll");
 app.UseMiddleware<ErrorHandlingMiddleware>();
 
 if (app.Environment.IsDevelopment())
@@ -120,8 +121,6 @@ if (app.Environment.IsDevelopment())
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "NFC Attendance API v1");
     });
 }
-
-app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
 
