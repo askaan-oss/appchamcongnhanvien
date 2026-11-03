@@ -49,6 +49,9 @@ namespace NfcAttendance.Api.Services
                 .FirstOrDefaultAsync(s => s.IsActive && s.Name.Contains("Hành Chính"))
                 ?? await _context.Shifts.FirstOrDefaultAsync(s => s.IsActive);
 
+            var allActiveShifts = await _context.Shifts.Where(s => s.IsActive).ToListAsync();
+            var shiftDict = allActiveShifts.ToDictionary(s => s.Id);
+
             var rawEmployees = await query
                 .OrderByDescending(e => e.CreatedAt)
                 .Skip((pageIndex - 1) * pageSize)
@@ -58,17 +61,22 @@ namespace NfcAttendance.Api.Services
             var items = rawEmployees.Select(e =>
             {
                 var assignments = e.EmployeeShifts
-                    .Where(es => es.Shift != null && es.Shift.IsActive)
-                    .GroupBy(es => es.ShiftId)
+                    .Select(es => new
+                    {
+                        es,
+                        Shift = es.Shift ?? (shiftDict.TryGetValue(es.ShiftId, out var s) ? s : null)
+                    })
+                    .Where(x => x.Shift != null && x.Shift.IsActive)
+                    .GroupBy(x => x.Shift!.Id)
                     .Select(g => new EmployeeShiftSummaryDto
                     {
                         ShiftId = g.Key,
                         ShiftName = g.First().Shift?.Name ?? "",
                         StartTime = g.First().Shift?.StartTime.ToString(@"hh\:mm\:ss") ?? "",
                         EndTime = g.First().Shift?.EndTime.ToString(@"hh\:mm\:ss") ?? "",
-                        DaysOfWeek = string.Join(",", g.Select(x => x.DayOfWeek).OrderBy(x => x)),
-                        EffectiveFrom = g.Min(x => x.EffectiveFrom),
-                        EffectiveTo = g.Max(x => x.EffectiveTo),
+                        DaysOfWeek = string.Join(",", g.Select(x => x.es.DayOfWeek).OrderBy(x => x)),
+                        EffectiveFrom = g.Min(x => x.es.EffectiveFrom),
+                        EffectiveTo = g.Max(x => x.es.EffectiveTo),
                         IsDefault = false
                     })
                     .ToList();
@@ -125,18 +133,26 @@ namespace NfcAttendance.Api.Services
                 .FirstOrDefaultAsync(s => s.IsActive && s.Name.Contains("Hành Chính"))
                 ?? await _context.Shifts.FirstOrDefaultAsync(s => s.IsActive);
 
+            var allActiveShifts = await _context.Shifts.Where(s => s.IsActive).ToListAsync();
+            var shiftDict = allActiveShifts.ToDictionary(s => s.Id);
+
             var assignments = e.EmployeeShifts
-                .Where(es => es.Shift != null && es.Shift.IsActive)
-                .GroupBy(es => es.ShiftId)
+                .Select(es => new
+                {
+                    es,
+                    Shift = es.Shift ?? (shiftDict.TryGetValue(es.ShiftId, out var s) ? s : null)
+                })
+                .Where(x => x.Shift != null && x.Shift.IsActive)
+                .GroupBy(x => x.Shift!.Id)
                 .Select(g => new EmployeeShiftSummaryDto
                 {
                     ShiftId = g.Key,
                     ShiftName = g.First().Shift?.Name ?? "",
                     StartTime = g.First().Shift?.StartTime.ToString(@"hh\:mm\:ss") ?? "",
                     EndTime = g.First().Shift?.EndTime.ToString(@"hh\:mm\:ss") ?? "",
-                    DaysOfWeek = string.Join(",", g.Select(x => x.DayOfWeek).OrderBy(x => x)),
-                    EffectiveFrom = g.Min(x => x.EffectiveFrom),
-                    EffectiveTo = g.Max(x => x.EffectiveTo),
+                    DaysOfWeek = string.Join(",", g.Select(x => x.es.DayOfWeek).OrderBy(x => x)),
+                    EffectiveFrom = g.Min(x => x.es.EffectiveFrom),
+                    EffectiveTo = g.Max(x => x.es.EffectiveTo),
                     IsDefault = false
                 })
                 .ToList();

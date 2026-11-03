@@ -73,10 +73,21 @@ namespace NfcAttendance.Api.Services
                 .Include(es => es.Shift)
                 .FirstOrDefaultAsync(es => es.EmployeeId == employee.Id &&
                                            es.DayOfWeek == dayOfWeek &&
-                                           es.EffectiveFrom <= today &&
-                                           (es.EffectiveTo == null || es.EffectiveTo >= today));
+                                           es.EffectiveFrom.Date <= today &&
+                                           (es.EffectiveTo == null || es.EffectiveTo.Value.Date >= today));
+
+            // Nếu hôm nay không có ca cụ thể cho thứ này, lấy ca gần nhất mà nhân viên đã được phân
+            if (empShift == null)
+            {
+                empShift = await _context.EmployeeShifts
+                    .Include(es => es.Shift)
+                    .Where(es => es.EmployeeId == employee.Id)
+                    .OrderByDescending(es => es.EffectiveFrom)
+                    .FirstOrDefaultAsync();
+            }
 
             var shift = empShift?.Shift 
+                ?? (empShift != null ? await _context.Shifts.FindAsync(empShift.ShiftId) : null)
                 ?? await _context.Shifts.FirstOrDefaultAsync(s => s.IsActive && s.Name.Contains("Hành Chính"))
                 ?? await _context.Shifts.FirstOrDefaultAsync(s => s.IsActive);
             if (shift == null)
@@ -127,6 +138,7 @@ namespace NfcAttendance.Api.Services
                 else
                 {
                     // Đã có bản ghi nhưng gọi ép CHECK_IN
+                    attendance.ShiftId = shift.Id;
                     attendance.CheckIn = scanTime;
                     attendance.LateMinutes = lateMinutes;
                     attendance.Status = status;
@@ -167,6 +179,7 @@ namespace NfcAttendance.Api.Services
                     _context.Attendances.Add(attendance);
                 }
 
+                attendance.ShiftId = shift.Id;
                 attendance.CheckOut = scanTime;
 
                 // Tính về sớm (EarlyMinutes)
@@ -220,20 +233,44 @@ namespace NfcAttendance.Api.Services
         public async Task<List<AttendanceHistoryDto>> GetTodayAttendanceAsync()
         {
             var today = DateTime.Today;
-            return await _context.Attendances
+            var list = await _context.Attendances
                 .Include(a => a.Employee)
+                    .ThenInclude(e => e.EmployeeShifts)
+                        .ThenInclude(es => es.Shift)
                 .Include(a => a.Shift)
                 .Where(a => a.Date == today)
                 .OrderByDescending(a => a.CheckIn)
-                .Select(a => new AttendanceHistoryDto
+                .ToListAsync();
+
+            var allShifts = await _context.Shifts.Where(s => s.IsActive).ToDictionaryAsync(s => s.Id);
+            byte dayOfWeek = (byte)today.DayOfWeek;
+
+            return list.Select(a =>
+            {
+                var assignedShift = a.Employee?.EmployeeShifts?
+                    .Where(es => es.DayOfWeek == dayOfWeek)
+                    .Select(es => es.Shift ?? (allShifts.TryGetValue(es.ShiftId, out var s) ? s : null))
+                    .FirstOrDefault(s => s != null)
+                    ?? a.Employee?.EmployeeShifts?
+                    .Select(es => es.Shift ?? (allShifts.TryGetValue(es.ShiftId, out var s) ? s : null))
+                    .FirstOrDefault(s => s != null);
+
+                var effectiveShift = (a.Shift != null && !a.Shift.Name.Contains("Hành Chính")) 
+                    ? a.Shift 
+                    : (assignedShift ?? a.Shift);
+
+                var shiftName = effectiveShift?.Name ?? "Ca Hành Chính";
+                var shiftTime = effectiveShift != null ? $"{effectiveShift.StartTime:hh\\:mm} - {effectiveShift.EndTime:hh\\:mm}" : "08:00 - 17:30";
+
+                return new AttendanceHistoryDto
                 {
                     Id = a.Id,
                     EmployeeId = a.EmployeeId,
                     EmployeeCode = a.Employee != null ? a.Employee.EmployeeCode : string.Empty,
                     FullName = a.Employee != null ? a.Employee.FullName : string.Empty,
                     Department = a.Employee != null ? (a.Employee.Department ?? string.Empty) : string.Empty,
-                    ShiftName = a.Shift != null ? a.Shift.Name : "Ca Hành Chính",
-                    ShiftTime = a.Shift != null ? $"{a.Shift.StartTime:hh\\:mm} - {a.Shift.EndTime:hh\\:mm}" : null,
+                    ShiftName = shiftName,
+                    ShiftTime = shiftTime,
                     Date = a.Date,
                     CheckIn = a.CheckIn.ToString("HH:mm:ss"),
                     CheckOut = a.CheckOut.HasValue ? a.CheckOut.Value.ToString("HH:mm:ss") : "--:--",
@@ -244,14 +281,16 @@ namespace NfcAttendance.Api.Services
                     Status = a.Status,
                     CheckInMethod = a.CheckInMethod,
                     DeviceId = a.DeviceId
-                })
-                .ToListAsync();
+                };
+            }).ToList();
         }
 
         public async Task<List<AttendanceHistoryDto>> GetAttendanceHistoryAsync(AttendanceHistoryFilterDto filter)
         {
             var query = _context.Attendances
                 .Include(a => a.Employee)
+                    .ThenInclude(e => e.EmployeeShifts)
+                        .ThenInclude(es => es.Shift)
                 .Include(a => a.Shift)
                 .AsQueryable();
 
@@ -277,18 +316,40 @@ namespace NfcAttendance.Api.Services
                 query = query.Where(a => a.EmployeeId == filter.EmployeeId.Value);
             }
 
-            return await query
+            var list = await query
                 .OrderByDescending(a => a.Date)
                 .ThenByDescending(a => a.CheckIn)
-                .Select(a => new AttendanceHistoryDto
+                .ToListAsync();
+
+            var allShifts = await _context.Shifts.Where(s => s.IsActive).ToDictionaryAsync(s => s.Id);
+
+            return list.Select(a =>
+            {
+                byte dayOfWeek = (byte)a.Date.DayOfWeek;
+                var assignedShift = a.Employee?.EmployeeShifts?
+                    .Where(es => es.DayOfWeek == dayOfWeek)
+                    .Select(es => es.Shift ?? (allShifts.TryGetValue(es.ShiftId, out var s) ? s : null))
+                    .FirstOrDefault(s => s != null)
+                    ?? a.Employee?.EmployeeShifts?
+                    .Select(es => es.Shift ?? (allShifts.TryGetValue(es.ShiftId, out var s) ? s : null))
+                    .FirstOrDefault(s => s != null);
+
+                var effectiveShift = (a.Shift != null && !a.Shift.Name.Contains("Hành Chính")) 
+                    ? a.Shift 
+                    : (assignedShift ?? a.Shift);
+
+                var shiftName = effectiveShift?.Name ?? "Ca Hành Chính";
+                var shiftTime = effectiveShift != null ? $"{effectiveShift.StartTime:hh\\:mm} - {effectiveShift.EndTime:hh\\:mm}" : "08:00 - 17:30";
+
+                return new AttendanceHistoryDto
                 {
                     Id = a.Id,
                     EmployeeId = a.EmployeeId,
                     EmployeeCode = a.Employee != null ? a.Employee.EmployeeCode : string.Empty,
                     FullName = a.Employee != null ? a.Employee.FullName : string.Empty,
                     Department = a.Employee != null ? (a.Employee.Department ?? string.Empty) : string.Empty,
-                    ShiftName = a.Shift != null ? a.Shift.Name : "Ca Hành Chính",
-                    ShiftTime = a.Shift != null ? $"{a.Shift.StartTime:hh\\:mm} - {a.Shift.EndTime:hh\\:mm}" : null,
+                    ShiftName = shiftName,
+                    ShiftTime = shiftTime,
                     Date = a.Date,
                     CheckIn = a.CheckIn.ToString("HH:mm:ss"),
                     CheckOut = a.CheckOut.HasValue ? a.CheckOut.Value.ToString("HH:mm:ss") : "--:--",
@@ -299,8 +360,8 @@ namespace NfcAttendance.Api.Services
                     Status = a.Status,
                     CheckInMethod = a.CheckInMethod,
                     DeviceId = a.DeviceId
-                })
-                .ToListAsync();
+                };
+            }).ToList();
         }
 
         public async Task<(bool Success, string Message)> AdjustAttendanceManualAsync(ManualAttendanceDto dto)

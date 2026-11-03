@@ -284,10 +284,12 @@ export function ShiftsPage() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {employeesWithShifts.map((emp) => {
-                  const assignment = emp.shiftAssignments?.[0] || emp.currentShiftAssignment
+                  const assignments = emp.shiftAssignments && emp.shiftAssignments.length > 0
+                    ? emp.shiftAssignments
+                    : (emp.currentShiftAssignment ? [emp.currentShiftAssignment] : [])
+                  const firstAss = assignments[0]
                   const defaultShift = shifts.find(s => s.isDefault || s.shiftName?.includes('Hành Chính') || s.name?.includes('Hành Chính')) || shifts[0]
-                  const assignedShift = assignment?.shift || shifts.find(s => s.id === assignment?.shiftId) || (assignment?.isDefault ? defaultShift : null)
-                  const isCustom = assignment && !assignment.isDefault
+                  const isCustom = firstAss && !firstAss.isDefault
 
                   return (
                     <tr key={emp.id} className="hover:bg-slate-50/70 transition-colors">
@@ -300,11 +302,23 @@ export function ShiftsPage() {
 
                       <td className="py-3.5 px-4 font-semibold text-slate-800">
                         {isCustom ? (
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-blue-600 font-bold">{assignment.shiftName || assignedShift?.shiftName || assignedShift?.name}</span>
-                            <span className="font-mono text-slate-400 text-[11px]">
-                              ({formatTime(assignment.startTime || assignedShift?.startTime)}-{formatTime(assignment.endTime || assignedShift?.endTime)})
-                            </span>
+                          <div className="flex flex-col gap-1">
+                            {assignments.map((ass, idx) => {
+                              const s = shifts.find(item => Number(item.id) === Number(ass.shiftId))
+                              const sName = ass.shiftName || s?.shiftName || s?.name || 'Ca làm việc'
+                              const sStart = ass.startTime || s?.startTime
+                              const sEnd = ass.endTime || s?.endTime
+                              return (
+                                <div key={idx} className="flex items-center gap-1.5">
+                                  <span className="text-blue-600 font-bold">{sName}</span>
+                                  {sStart && sEnd && (
+                                    <span className="font-mono text-slate-400 text-[11px]">
+                                      ({formatTime(sStart)}-{formatTime(sEnd)})
+                                    </span>
+                                  )}
+                                </div>
+                              )
+                            })}
                           </div>
                         ) : (
                           <div className="flex items-center gap-1.5">
@@ -320,18 +334,24 @@ export function ShiftsPage() {
                       </td>
 
                       <td className="py-3.5 px-4 text-slate-600">
-                        {assignment?.daysOfWeek ? (
-                          formatDays(assignment.daysOfWeek)
+                        {isCustom ? (
+                          <div className="flex flex-col gap-1">
+                            {assignments.map((ass, idx) => (
+                              <span key={idx} className="text-slate-700 font-medium">
+                                {ass.daysOfWeek ? formatDays(ass.daysOfWeek) : '-'}
+                              </span>
+                            ))}
+                          </div>
                         ) : (
                           <span className="text-slate-600 font-medium">Thứ 2, Thứ 3, Thứ 4, Thứ 5, Thứ 6</span>
                         )}
                       </td>
 
                       <td className="py-3.5 px-4 text-slate-500 font-mono text-[11px]">
-                        {isCustom && assignment?.effectiveFrom ? (
+                        {isCustom && firstAss?.effectiveFrom ? (
                           <span>
-                            {formatDate(assignment.effectiveFrom)} &rarr;{' '}
-                            {assignment.effectiveTo ? formatDate(assignment.effectiveTo) : 'Vô hạn'}
+                            {formatDate(firstAss.effectiveFrom)} &rarr;{' '}
+                            {firstAss.effectiveTo ? formatDate(firstAss.effectiveTo) : 'Vô hạn'}
                           </span>
                         ) : (
                           <span className="text-slate-400">Toàn thời gian</span>

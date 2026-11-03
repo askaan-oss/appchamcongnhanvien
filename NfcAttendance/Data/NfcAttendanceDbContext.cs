@@ -69,6 +69,20 @@ namespace NfcAttendance.Api.Data
                 entity.Property(s => s.BreakEnd).HasColumnType("time(0)");
             });
 
+            // Cấu hình bảng EmployeeShifts
+            modelBuilder.Entity<EmployeeShift>(entity =>
+            {
+                entity.HasOne(es => es.Employee)
+                      .WithMany(e => e.EmployeeShifts)
+                      .HasForeignKey(es => es.EmployeeId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(es => es.Shift)
+                      .WithMany()
+                      .HasForeignKey(es => es.ShiftId)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+
             // Cấu hình bảng LeaveRequests
             modelBuilder.Entity<LeaveRequest>(entity =>
             {
