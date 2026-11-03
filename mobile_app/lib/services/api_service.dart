@@ -50,6 +50,9 @@ class ApiService {
       final payload = data['data'] ?? data;
       return TapAttendanceResponse.fromJson(payload);
     } on DioException catch (e) {
+      if (e.response?.data is Map) {
+        return TapAttendanceResponse.fromJson(Map<String, dynamic>.from(e.response!.data as Map));
+      }
       final msg = e.response?.data?['message'] ?? e.message ?? 'Lỗi kết nối máy chủ';
       return TapAttendanceResponse.error(msg);
     } catch (e) {
@@ -69,6 +72,9 @@ class ApiService {
       final payload = data['data'] ?? data;
       return TapAttendanceResponse.fromJson(payload);
     } on DioException catch (e) {
+      if (e.response?.data is Map) {
+        return TapAttendanceResponse.fromJson(Map<String, dynamic>.from(e.response!.data as Map));
+      }
       final msg = e.response?.data?['message'] ?? e.message ?? 'Lỗi kết nối máy chủ';
       return TapAttendanceResponse.error(msg);
     } catch (e) {
@@ -88,6 +94,9 @@ class ApiService {
       final payload = data['data'] ?? data;
       return TapAttendanceResponse.fromJson(payload);
     } on DioException catch (e) {
+      if (e.response?.data is Map) {
+        return TapAttendanceResponse.fromJson(Map<String, dynamic>.from(e.response!.data as Map));
+      }
       final msg = e.response?.data?['message'] ?? e.message ?? 'Lỗi kết nối máy chủ';
       return TapAttendanceResponse.error(msg);
     } catch (e) {

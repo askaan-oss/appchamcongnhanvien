@@ -12,6 +12,7 @@ import {
   Mail,
   Building,
   Briefcase,
+  Clock,
 } from 'lucide-react'
 import employeeApi from '../../api/employeeApi'
 import useDebounce from '../../hooks/useDebounce'
@@ -192,6 +193,7 @@ export function EmployeesPage() {
                   <th className="py-3 px-4">Nhân viên</th>
                   <th className="py-3 px-4">Phòng ban & Chức vụ</th>
                   <th className="py-3 px-4">Số Điện Thoại / Email</th>
+                  <th className="py-3 px-4">Ca Làm Việc</th>
                   <th className="py-3 px-4 text-center">Thẻ NFC Đã Gán</th>
                   <th className="py-3 px-4 text-center">Trạng thái</th>
                   <th className="py-3 px-4 text-right">Thao tác</th>
@@ -253,7 +255,37 @@ export function EmployeesPage() {
                         )}
                       </td>
 
-                      {/* Cột 4: Thẻ NFC Đã Gán */}
+                      {/* Cột 4: Ca làm việc */}
+                      <td className="py-3.5 px-4 font-medium">
+                        {emp.shiftAssignments && emp.shiftAssignments.length > 0 ? (
+                          <div className="flex flex-col gap-1">
+                            {emp.shiftAssignments.map((ass, idx) => (
+                              <div key={idx} className="flex items-center gap-1.5">
+                                <Clock className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                                <span className="text-blue-700 font-bold text-xs">{ass.shiftName}</span>
+                                {ass.startTime && ass.endTime && (
+                                  <span className="font-mono text-slate-400 text-[11px]">
+                                    ({ass.startTime.substring(0, 5)}-{ass.endTime.substring(0, 5)})
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                            <span className="text-emerald-700 font-medium text-xs">Ca Hành Chính</span>
+                            <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              Mặc định
+                            </span>
+                            <span className="font-mono text-slate-400 text-[11px]">
+                              (08:00-17:30)
+                            </span>
+                          </div>
+                        )}
+                      </td>
+
+                      {/* Cột 5: Thẻ NFC Đã Gán */}
                       <td className="py-3.5 px-4 text-center">
                         <button
                           onClick={() => openNfcModal(emp)}

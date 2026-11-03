@@ -99,6 +99,32 @@ namespace NfcAttendance.Api.Services
             var attendance = await _context.Attendances
                 .FirstOrDefaultAsync(a => a.EmployeeId == employee.Id && a.Date == today);
 
+            // Kiểm tra xem ca làm việc đã kết thúc hay chưa
+            TimeSpan currentScanTimeOfDay = scanTime.TimeOfDay;
+            bool isShiftEnded = (shift.EndTime > shift.StartTime)
+                ? (currentScanTimeOfDay >= shift.EndTime)
+                : (currentScanTimeOfDay >= shift.EndTime && currentScanTimeOfDay < shift.StartTime);
+
+            // NẾU CHƯA TỪNG CHECK-IN TRONG NGÀY VÀ CA LÀM VIỆC ĐÃ KẾT THÚC:
+            // TỪ CHỐI CHẤM CÔNG VÀ YÊU CẦU LIÊN HỆ PHÒNG NHÂN SỰ ĐỂ GIẢI TRÌNH
+            if (attendance == null && isShiftEnded)
+            {
+                return new TapAttendanceResponseDto
+                {
+                    Success = false,
+                    Action = "REJECTED",
+                    EmployeeCode = employee.EmployeeCode,
+                    FullName = employee.FullName,
+                    Department = employee.Department ?? "Chưa gán",
+                    ShiftName = shift.Name,
+                    ShiftTime = $"{shift.StartTime:hh\\:mm} - {shift.EndTime:hh\\:mm}",
+                    AvatarUrl = employee.AvatarUrl,
+                    Timestamp = scanTime,
+                    Status = "SHIFT_ENDED",
+                    Message = $"Ca làm việc ({shift.Name}: {shift.StartTime:hh\\:mm} - {shift.EndTime:hh\\:mm}) đã kết thúc. Bạn chưa Check-in nên không thể chấm công. Vui lòng liên hệ phòng Nhân sự để giải trình!"
+                };
+            }
+
             TapAttendanceResponseDto response;
 
             bool isCheckIn = forcedAction == "CHECK_IN" || (forcedAction == null && attendance == null);
@@ -106,7 +132,6 @@ namespace NfcAttendance.Api.Services
             if (isCheckIn)
             {
                 // ========== LUỒNG CHECK-IN ==========
-                TimeSpan currentScanTimeOfDay = scanTime.TimeOfDay;
                 TimeSpan lateThreshold = shift.StartTime.Add(TimeSpan.FromMinutes(shift.GraceMinutes));
 
                 int lateMinutes = 0;

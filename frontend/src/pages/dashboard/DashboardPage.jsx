@@ -66,6 +66,9 @@ export function DashboardPage() {
   useEffect(() => {
     const unsubscribe = subscribeAttendance((eventData) => {
       console.log('Realtime push received in Dashboard:', eventData)
+      if (eventData.success === false || eventData.isSuccess === false) {
+        return
+      }
 
       setTodayAttendance((prev) => {
         const existingIndex = prev.findIndex(

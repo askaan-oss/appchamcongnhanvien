@@ -141,7 +141,7 @@ class _AttendanceResultModalState extends State<AttendanceResultModal> with Sing
                         ),
                       ),
 
-                      if (isSuccess && res.employeeName != null) ...[
+                      if (res.employeeName != null) ...[
                         const SizedBox(height: 20),
                         Container(
                           padding: const EdgeInsets.all(16),
