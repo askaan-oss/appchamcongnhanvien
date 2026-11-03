@@ -46,9 +46,9 @@ namespace NfcAttendance.Api.Services
             Employee? employee = null;
             if (!string.IsNullOrEmpty(request.CardUid))
             {
-                var cleanCardUid = request.CardUid.Trim().ToUpper();
+                var cleanCardUid = request.CardUid.Trim().Replace(":", "").Replace("-", "").Replace(" ", "").ToUpper();
                 var card = await _context.NfcCards.Include(c => c.Employee)
-                    .FirstOrDefaultAsync(c => c.Uid.ToUpper() == cleanCardUid && c.Status == "ACTIVE");
+                    .FirstOrDefaultAsync(c => c.Uid.Replace(":", "").Replace("-", "").Replace(" ", "").ToUpper() == cleanCardUid && c.Status == "ACTIVE");
                 employee = card?.Employee;
             }
             else if (!string.IsNullOrEmpty(request.QrPayload))

@@ -32,6 +32,20 @@ namespace NfcAttendance.Api.Controllers
         }
 
         /// <summary>
+        /// 16b. Quẹt chấm công thông minh (Tự động nhận diện Check-In hoặc Check-Out)
+        /// </summary>
+        [HttpPost("tap")]
+        public async Task<IActionResult> TapAttendance([FromBody] TapAttendanceRequestDto request)
+        {
+            var result = await _attendanceService.ProcessTapAsync(request);
+            if (!result.Success)
+            {
+                return BadRequest(result);
+            }
+            return Ok(result);
+        }
+
+        /// <summary>
         /// 17. Ghi nhận ra ca (Check-Out)
         /// </summary>
         [HttpPost("check-out")]

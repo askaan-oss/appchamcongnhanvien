@@ -224,13 +224,13 @@ class _KioskHomeScreenState extends State<KioskHomeScreen> {
       onTap: () {
         setState(() => _attendanceMode = mode);
       },
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(10),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
           color: isSelected ? activeColor.withAlpha(50) : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: isSelected ? activeColor : Colors.transparent,
             width: 1.5,
@@ -241,15 +241,15 @@ class _KioskHomeScreenState extends State<KioskHomeScreen> {
           children: [
             Icon(
               icon,
-              size: 16,
+              size: 14,
               color: isSelected ? activeColor : const Color(0xFF94A3B8),
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 4),
             Text(
               label,
               style: TextStyle(
                 color: isSelected ? Colors.white : const Color(0xFF94A3B8),
-                fontSize: 12,
+                fontSize: 11.5,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
               ),
             ),
@@ -295,21 +295,23 @@ class _KioskHomeScreenState extends State<KioskHomeScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          // Thanh chuyển chế độ: Tự động / Check-In / Check-Out
+                          // Thanh chuyển chế độ: Tự động / Vào Ca / Ra Ca
                           Container(
                             margin: const EdgeInsets.only(bottom: 16),
-                            padding: const EdgeInsets.all(4),
+                            padding: const EdgeInsets.all(3),
                             decoration: BoxDecoration(
                               color: const Color(0xFF1E293B),
-                              borderRadius: BorderRadius.circular(16),
+                              borderRadius: BorderRadius.circular(14),
                               border: Border.all(color: const Color(0xFF334155)),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 _buildModeChip('AUTO', 'Tự Động', Icons.auto_awesome),
+                                const SizedBox(width: 4),
                                 _buildModeChip('IN', 'Vào Ca', Icons.login),
-                                _buildModeChip('OUT', 'Ra Ca (Check-Out)', Icons.logout),
+                                const SizedBox(width: 4),
+                                _buildModeChip('OUT', 'Ra Ca', Icons.logout),
                               ],
                             ),
                           ),
@@ -395,34 +397,41 @@ class _KioskHomeScreenState extends State<KioskHomeScreen> {
         ),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildNavItem(
-                  icon: Icons.nfc,
-                  label: 'Chấm NFC',
-                  isActive: true,
-                  onTap: () {},
+                Expanded(
+                  child: _buildNavItem(
+                    icon: Icons.nfc,
+                    label: 'Chấm NFC',
+                    isActive: true,
+                    onTap: () {},
+                  ),
                 ),
-                _buildNavItem(
-                  icon: Icons.qr_code_scanner,
-                  label: 'Quét QR',
-                  isActive: false,
-                  onTap: _isProcessing ? null : _handleQrScanner,
+                Expanded(
+                  child: _buildNavItem(
+                    icon: Icons.qr_code_scanner,
+                    label: 'Quét QR',
+                    isActive: false,
+                    onTap: _isProcessing ? null : _handleQrScanner,
+                  ),
                 ),
-                _buildNavItem(
-                  icon: Icons.swap_horiz_rounded,
-                  label: 'Đổi chế độ',
-                  isActive: false,
-                  highlightColor: Colors.amberAccent,
-                  onTap: _confirmBackToModeSelect,
+                Expanded(
+                  child: _buildNavItem(
+                    icon: Icons.swap_horiz_rounded,
+                    label: 'Đổi chế độ',
+                    isActive: false,
+                    highlightColor: Colors.amberAccent,
+                    onTap: _confirmBackToModeSelect,
+                  ),
                 ),
-                _buildNavItem(
-                  icon: Icons.settings_outlined,
-                  label: 'Cài đặt',
-                  isActive: false,
-                  onTap: _openSettingsWithPin,
+                Expanded(
+                  child: _buildNavItem(
+                    icon: Icons.settings_outlined,
+                    label: 'Cài đặt',
+                    isActive: false,
+                    onTap: _openSettingsWithPin,
+                  ),
                 ),
               ],
             ),
@@ -445,19 +454,22 @@ class _KioskHomeScreenState extends State<KioskHomeScreen> {
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(10),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: color, size: 24),
-            const SizedBox(height: 4),
+            Icon(icon, color: color, size: 22),
+            const SizedBox(height: 3),
             Text(
               label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
               style: TextStyle(
                 color: color,
-                fontSize: 11,
+                fontSize: 10.5,
                 fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
               ),
             ),
