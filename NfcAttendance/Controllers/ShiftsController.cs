@@ -32,7 +32,7 @@ namespace NfcAttendance.Api.Controllers
         /// 12. Tạo ca làm việc mới
         /// </summary>
         [HttpPost]
-        [Authorize(Roles = "ADMIN")]
+        [Authorize(Roles = "ADMIN,HR")]
         public async Task<IActionResult> CreateShift([FromBody] CreateShiftDto dto)
         {
             var (success, message, data) = await _shiftService.CreateShiftAsync(dto);
@@ -47,7 +47,7 @@ namespace NfcAttendance.Api.Controllers
         /// 13. Cập nhật ca làm việc
         /// </summary>
         [HttpPut("{id}")]
-        [Authorize(Roles = "ADMIN")]
+        [Authorize(Roles = "ADMIN,HR")]
         public async Task<IActionResult> UpdateShift(int id, [FromBody] UpdateShiftDto dto)
         {
             var (success, message, data) = await _shiftService.UpdateShiftAsync(id, dto);
@@ -62,7 +62,7 @@ namespace NfcAttendance.Api.Controllers
         /// 14. Xóa ca làm việc (ngừng kích hoạt)
         /// </summary>
         [HttpDelete("{id}")]
-        [Authorize(Roles = "ADMIN")]
+        [Authorize(Roles = "ADMIN,HR")]
         public async Task<IActionResult> DeleteShift(int id)
         {
             var (success, message) = await _shiftService.DeleteShiftAsync(id);

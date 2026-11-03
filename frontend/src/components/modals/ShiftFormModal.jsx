@@ -7,6 +7,7 @@ import shiftApi from '../../api/shiftApi'
 export function ShiftFormModal({ isOpen, onClose, onSuccess, initialData = null }) {
   const isEdit = !!initialData
   const [formData, setFormData] = useState({
+    name: '',
     shiftName: '',
     startTime: '08:00',
     endTime: '17:30',
@@ -20,17 +21,20 @@ export function ShiftFormModal({ isOpen, onClose, onSuccess, initialData = null 
 
   useEffect(() => {
     if (initialData) {
+      const name = initialData.name || initialData.shiftName || ''
       setFormData({
-        shiftName: initialData.shiftName || '',
+        name,
+        shiftName: name,
         startTime: initialData.startTime ? initialData.startTime.substring(0, 5) : '08:00',
         endTime: initialData.endTime ? initialData.endTime.substring(0, 5) : '17:30',
-        breakStartTime: initialData.breakStartTime ? initialData.breakStartTime.substring(0, 5) : '12:00',
-        breakEndTime: initialData.breakEndTime ? initialData.breakEndTime.substring(0, 5) : '13:30',
+        breakStartTime: (initialData.breakStart || initialData.breakStartTime) ? (initialData.breakStart || initialData.breakStartTime).substring(0, 5) : '12:00',
+        breakEndTime: (initialData.breakEnd || initialData.breakEndTime) ? (initialData.breakEnd || initialData.breakEndTime).substring(0, 5) : '13:30',
         graceMinutes: initialData.graceMinutes ?? 15,
         isActive: initialData.isActive !== false,
       })
     } else {
       setFormData({
+        name: '',
         shiftName: '',
         startTime: '08:00',
         endTime: '17:30',
@@ -47,21 +51,31 @@ export function ShiftFormModal({ isOpen, onClose, onSuccess, initialData = null 
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }))
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: null }))
+    if (name === 'shiftName' || name === 'name') {
+      setFormData((prev) => ({
+        ...prev,
+        name: value,
+        shiftName: value,
+      }))
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: type === 'checkbox' ? checked : value,
+      }))
+    }
+
+    if (errors[name] || errors.shiftName || errors.name) {
+      setErrors((prev) => ({ ...prev, [name]: null, shiftName: null, name: null }))
     }
   }
 
   const validate = () => {
     const errs = {}
-    if (!formData.shiftName?.trim()) errs.shiftName = 'Vui lòng nhập tên ca làm việc'
+    const name = (formData.shiftName || formData.name || '').trim()
+    if (!name) errs.shiftName = 'Vui lòng nhập tên ca làm việc'
     if (!formData.startTime) errs.startTime = 'Vui lòng chọn giờ bắt đầu'
     if (!formData.endTime) errs.endTime = 'Vui lòng chọn giờ kết thúc'
-    if (formData.graceMinutes < 0) errs.graceMinutes = 'Số phút ân hạn không được âm'
+    if (Number(formData.graceMinutes) < 0) errs.graceMinutes = 'Số phút ân hạn không được âm'
     setErrors(errs)
     return Object.keys(errs).length === 0
   }
@@ -72,9 +86,24 @@ export function ShiftFormModal({ isOpen, onClose, onSuccess, initialData = null 
 
     setIsLoading(true)
     try {
+      const formatTimeSec = (t) => {
+        if (!t || t.trim() === '') return undefined
+        return t.length === 5 ? `${t}:00` : t
+      }
+
+      const name = (formData.shiftName || formData.name || '').trim()
+
       const payload = {
-        ...formData,
-        graceMinutes: Number(formData.graceMinutes),
+        name,
+        shiftName: name,
+        startTime: formatTimeSec(formData.startTime) || '08:00:00',
+        endTime: formatTimeSec(formData.endTime) || '17:30:00',
+        breakStart: formatTimeSec(formData.breakStartTime) || '12:00:00',
+        breakStartTime: formatTimeSec(formData.breakStartTime) || '12:00:00',
+        breakEnd: formatTimeSec(formData.breakEndTime) || '13:30:00',
+        breakEndTime: formatTimeSec(formData.breakEndTime) || '13:30:00',
+        graceMinutes: Number(formData.graceMinutes) || 0,
+        isActive: formData.isActive !== false,
       }
 
       if (isEdit) {
@@ -85,9 +114,10 @@ export function ShiftFormModal({ isOpen, onClose, onSuccess, initialData = null 
       onSuccess?.()
       onClose()
     } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Có lỗi xảy ra khi lưu ca làm việc'
       setErrors((prev) => ({
         ...prev,
-        global: err.response?.data?.message || 'Có lỗi xảy ra khi lưu ca làm việc',
+        global: msg,
       }))
     } finally {
       setIsLoading(false)
@@ -212,4 +242,3 @@ export function ShiftFormModal({ isOpen, onClose, onSuccess, initialData = null 
 }
 
 export default ShiftFormModal
-

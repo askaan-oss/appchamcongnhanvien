@@ -69,6 +69,15 @@ namespace NfcAttendance.Api.DTOs
         public string? QrCode { get; set; } // Nếu để trống/null, hệ thống tự sinh mã QR bảo mật
     }
 
+    public class QrResponseDto
+    {
+        public int EmployeeId { get; set; }
+        public string EmployeeCode { get; set; } = string.Empty;
+        public string FullName { get; set; } = string.Empty;
+        public string QrCode { get; set; } = string.Empty;
+        public DateTime GeneratedAt { get; set; }
+    }
+
     public class EmployeeFilterDto
     {
         public string? Search { get; set; }

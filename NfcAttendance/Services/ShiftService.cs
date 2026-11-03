@@ -38,18 +38,19 @@ namespace NfcAttendance.Api.Services
 
         public async Task<(bool Success, string Message, ShiftDto? Data)> CreateShiftAsync(CreateShiftDto dto)
         {
-            if (string.IsNullOrWhiteSpace(dto.Name))
+            var shiftName = (dto.Name ?? dto.ShiftName ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(shiftName))
             {
                 return (false, "Tên ca làm việc là bắt buộc!", null);
             }
 
             var shift = new Shift
             {
-                Name = dto.Name.Trim(),
+                Name = shiftName,
                 StartTime = dto.StartTime,
                 EndTime = dto.EndTime,
-                BreakStart = dto.BreakStart,
-                BreakEnd = dto.BreakEnd,
+                BreakStart = dto.BreakStart ?? new TimeSpan(12, 0, 0),
+                BreakEnd = dto.BreakEnd ?? new TimeSpan(13, 30, 0),
                 GraceMinutes = dto.GraceMinutes,
                 IsActive = true
             };
@@ -78,11 +79,16 @@ namespace NfcAttendance.Api.Services
                 return (false, "Không tìm thấy ca làm việc!", null);
             }
 
-            shift.Name = dto.Name.Trim();
+            var shiftName = (dto.Name ?? dto.ShiftName ?? string.Empty).Trim();
+            if (!string.IsNullOrWhiteSpace(shiftName))
+            {
+                shift.Name = shiftName;
+            }
+
             shift.StartTime = dto.StartTime;
             shift.EndTime = dto.EndTime;
-            shift.BreakStart = dto.BreakStart;
-            shift.BreakEnd = dto.BreakEnd;
+            if (dto.BreakStart.HasValue) shift.BreakStart = dto.BreakStart.Value;
+            if (dto.BreakEnd.HasValue) shift.BreakEnd = dto.BreakEnd.Value;
             shift.GraceMinutes = dto.GraceMinutes;
             shift.IsActive = dto.IsActive;
 
@@ -155,4 +161,3 @@ namespace NfcAttendance.Api.Services
         }
     }
 }
-

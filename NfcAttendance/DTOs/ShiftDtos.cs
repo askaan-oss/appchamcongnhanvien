@@ -6,10 +6,13 @@ namespace NfcAttendance.Api.DTOs
     {
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
+        public string ShiftName => Name; // Hỗ trợ frontend đọc shiftName
         public string StartTime { get; set; } = string.Empty; // "08:00:00"
         public string EndTime { get; set; } = string.Empty;   // "17:30:00"
         public string BreakStart { get; set; } = string.Empty;
+        public string BreakStartTime => BreakStart; // Hỗ trợ frontend đọc breakStartTime
         public string BreakEnd { get; set; } = string.Empty;
+        public string BreakEndTime => BreakEnd; // Hỗ trợ frontend đọc breakEndTime
         public int GraceMinutes { get; set; }
         public bool IsActive { get; set; }
     }
@@ -17,20 +20,58 @@ namespace NfcAttendance.Api.DTOs
     public class CreateShiftDto
     {
         public string Name { get; set; } = string.Empty;
+        public string? ShiftName 
+        { 
+            get => Name; 
+            set { if (!string.IsNullOrEmpty(value)) Name = value; } 
+        }
+
         public TimeSpan StartTime { get; set; }
         public TimeSpan EndTime { get; set; }
-        public TimeSpan BreakStart { get; set; }
-        public TimeSpan BreakEnd { get; set; }
+
+        public TimeSpan? BreakStart { get; set; }
+        public TimeSpan? BreakStartTime 
+        { 
+            get => BreakStart; 
+            set => BreakStart = value; 
+        }
+
+        public TimeSpan? BreakEnd { get; set; }
+        public TimeSpan? BreakEndTime 
+        { 
+            get => BreakEnd; 
+            set => BreakEnd = value; 
+        }
+
         public int GraceMinutes { get; set; } = 15;
     }
 
     public class UpdateShiftDto
     {
         public string Name { get; set; } = string.Empty;
+        public string? ShiftName 
+        { 
+            get => Name; 
+            set { if (!string.IsNullOrEmpty(value)) Name = value; } 
+        }
+
         public TimeSpan StartTime { get; set; }
         public TimeSpan EndTime { get; set; }
-        public TimeSpan BreakStart { get; set; }
-        public TimeSpan BreakEnd { get; set; }
+
+        public TimeSpan? BreakStart { get; set; }
+        public TimeSpan? BreakStartTime 
+        { 
+            get => BreakStart; 
+            set => BreakStart = value; 
+        }
+
+        public TimeSpan? BreakEnd { get; set; }
+        public TimeSpan? BreakEndTime 
+        { 
+            get => BreakEnd; 
+            set => BreakEnd = value; 
+        }
+
         public int GraceMinutes { get; set; }
         public bool IsActive { get; set; } = true;
     }
@@ -56,4 +97,3 @@ namespace NfcAttendance.Api.DTOs
         public DateTime? EffectiveTo { get; set; }
     }
 }
-
