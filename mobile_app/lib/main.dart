@@ -18,11 +18,15 @@ void main() async {
   // Initialize background Offline Sync Worker
   SyncService.instance.init();
 
-  // Transparent system status bar
+  // System UI Configuration: Show status bar & navigation bar clearly
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.light,
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarIconBrightness: Brightness.light,
+      systemNavigationBarDividerColor: Colors.transparent,
     ),
   );
 

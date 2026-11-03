@@ -3,7 +3,7 @@ export const ATTENDANCE_STATUS = {
   LATE: { label: 'Đi trễ', color: 'bg-rose-100 text-rose-800 border-rose-200' },
   EARLY: { label: 'Về sớm', color: 'bg-amber-100 text-amber-800 border-amber-200' },
   COMPLETED: { label: 'Hoàn thành', color: 'bg-blue-100 text-blue-800 border-blue-200' },
-  OVERTIME: { label: 'Tăng ca', color: 'bg-purple-100 text-purple-800 border-purple-200' },
+  OVERTIME: { label: 'Hoàn thành & Tăng ca', color: 'bg-purple-100 text-purple-800 border-purple-200' },
   ABSENT: { label: 'Vắng mặt', color: 'bg-gray-100 text-gray-800 border-gray-200' },
 }
 

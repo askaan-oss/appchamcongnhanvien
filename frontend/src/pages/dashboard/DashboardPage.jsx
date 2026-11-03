@@ -438,11 +438,22 @@ export function DashboardPage() {
 
                       {/* Cột 9: Trạng thái */}
                       <td className="py-3.5 px-4 text-center">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold border ${statusConf.color}`}
-                        >
-                          {statusConf.label}
-                        </span>
+                        {row.status === 'OVERTIME' || (row.overtimeMinutes && row.overtimeMinutes > 0) ? (
+                          <div className="inline-flex items-center gap-1 flex-wrap justify-center">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold border bg-blue-100 text-blue-800 border-blue-200">
+                              Hoàn thành
+                            </span>
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold border bg-purple-100 text-purple-800 border-purple-200">
+                              Tăng ca {row.overtimeMinutes > 0 ? `+${row.overtimeMinutes}p` : ''}
+                            </span>
+                          </div>
+                        ) : (
+                          <span
+                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold border ${statusConf.color}`}
+                          >
+                            {statusConf.label}
+                          </span>
+                        )}
                       </td>
                     </tr>
                   )

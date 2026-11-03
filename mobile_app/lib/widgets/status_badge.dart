@@ -3,20 +3,66 @@ import 'package:flutter/material.dart';
 class StatusBadge extends StatelessWidget {
   final String status;
   final double fontSize;
+  final int overtimeMinutes;
 
   const StatusBadge({
     super.key,
     required this.status,
     this.fontSize = 12,
+    this.overtimeMinutes = 0,
   });
 
   @override
   Widget build(BuildContext context) {
+    final cleanStatus = status.trim().toUpperCase();
+    final isOvertime = cleanStatus == 'OVERTIME' || overtimeMinutes > 0;
+
+    if (isOvertime) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: Colors.blue.shade50,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.blue.shade300),
+            ),
+            child: Text(
+              'Hoàn thành',
+              style: TextStyle(
+                color: Colors.blue.shade700,
+                fontSize: fontSize,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: Colors.purple.shade50,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.purple.shade300),
+            ),
+            child: Text(
+              overtimeMinutes > 0 ? 'Tăng ca +${overtimeMinutes}p' : 'Tăng ca',
+              style: TextStyle(
+                color: Colors.purple.shade700,
+                fontSize: fontSize,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
     Color bg;
     Color fg;
     String text;
 
-    switch (status.toUpperCase()) {
+    switch (cleanStatus) {
       case 'ON_TIME':
         bg = Colors.green.shade50;
         fg = Colors.green.shade700;
@@ -36,11 +82,6 @@ class StatusBadge extends StatelessWidget {
         bg = Colors.blue.shade50;
         fg = Colors.blue.shade700;
         text = 'Hoàn thành';
-        break;
-      case 'OVERTIME':
-        bg = Colors.purple.shade50;
-        fg = Colors.purple.shade700;
-        text = 'Tăng ca';
         break;
       case 'OFFLINE_SAVED':
         bg = Colors.orange.shade50;

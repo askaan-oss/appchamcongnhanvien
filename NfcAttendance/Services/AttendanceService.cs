@@ -229,7 +229,7 @@ namespace NfcAttendance.Api.Services
                 attendance.EarlyMinutes = earlyMinutes;
                 attendance.OvertimeMinutes = overtimeMinutes;
                 attendance.TotalWorkingMinutes = totalMinutes;
-                attendance.Status = "COMPLETED";
+                attendance.Status = earlyMinutes > 0 ? "EARLY" : (overtimeMinutes > 0 ? "OVERTIME" : "COMPLETED");
 
                 await _context.SaveChangesAsync();
 
@@ -303,7 +303,7 @@ namespace NfcAttendance.Api.Services
                     EarlyMinutes = a.EarlyMinutes,
                     OvertimeMinutes = a.OvertimeMinutes,
                     TotalWorkingMinutes = a.TotalWorkingMinutes,
-                    Status = a.Status,
+                    Status = a.EarlyMinutes > 0 ? "EARLY" : (a.OvertimeMinutes > 0 ? "OVERTIME" : a.Status),
                     CheckInMethod = a.CheckInMethod,
                     DeviceId = a.DeviceId
                 };
@@ -382,7 +382,7 @@ namespace NfcAttendance.Api.Services
                     EarlyMinutes = a.EarlyMinutes,
                     OvertimeMinutes = a.OvertimeMinutes,
                     TotalWorkingMinutes = a.TotalWorkingMinutes,
-                    Status = a.Status,
+                    Status = a.EarlyMinutes > 0 ? "EARLY" : (a.OvertimeMinutes > 0 ? "OVERTIME" : a.Status),
                     CheckInMethod = a.CheckInMethod,
                     DeviceId = a.DeviceId
                 };

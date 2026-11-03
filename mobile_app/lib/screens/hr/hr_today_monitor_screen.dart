@@ -162,9 +162,11 @@ class _HrTodayMonitorScreenState extends State<HrTodayMonitorScreen> {
                             final checkOut = item['checkOutTime'] != null
                                 ? DateTime.tryParse(item['checkOutTime'])
                                 : null;
-                            final status = item['status'] ?? 'ON_TIME';
+                            final status = item['status'] ?? item['Status'] ?? 'ON_TIME';
                             final method = item['method'] ?? 'NFC';
-                            final lateMin = item['lateMinutes'] ?? 0;
+                            final lateMin = item['lateMinutes'] ?? item['LateMinutes'] ?? 0;
+                            final rawOt = item['overtimeMinutes'] ?? item['OvertimeMinutes'] ?? 0;
+                            final overtimeMin = rawOt is int ? rawOt : int.tryParse(rawOt.toString()) ?? 0;
 
                             return Card(
                               elevation: 0,
@@ -189,7 +191,10 @@ class _HrTodayMonitorScreenState extends State<HrTodayMonitorScreen> {
                                             color: Color(0xFF1E293B),
                                           ),
                                         ),
-                                        StatusBadge(status: status),
+                                        StatusBadge(
+                                          status: status.toString(),
+                                          overtimeMinutes: overtimeMin,
+                                        ),
                                       ],
                                     ),
                                     const SizedBox(height: 4),
